@@ -2,23 +2,22 @@
     <div class="main-view">
         <MoneyBar :money="money" />
         <Map :money="money" @add-building="addBuilding" />
-        <button @click="handleAddBuilding" class="add-building-button">Ajouter un bâtiment</button>
-        <!-- Afficher les bâtiments ajoutés -->
-        <Building v-for="(building, index) in buildings" :key="building.id" :building="building" />
+        <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital</button>
+        <Building v-for="(building, index) in buildings" :key="index" :building="building" />
     </div>
 </template>
 
 <script>
 import MoneyBar from '@/components/MoneyBar.vue';
 import Map from '@/components/Map.vue';
-import Building from '@/components/Building.vue'; // Importer Building
+import Building from '@/components/Building.vue';
 
 export default {
     name: 'MainView',
     components: {
         MoneyBar,
         Map,
-        Building // Ajouter Building à la liste des composants
+        Building
     },
     data() {
         return {
@@ -27,6 +26,7 @@ export default {
         };
     },
     methods: {
+        //PUSH LES BUILDINGS DANS LA LISTE
         addBuilding(building) {
             if (this.money >= building.cost) {
                 this.buildings.push(building); // Ajouter le bâtiment à la liste
@@ -35,46 +35,92 @@ export default {
                 alert("Pas assez d'argent !");
             }
         },
+        //CRÉER LES BUILDINDS AVEC LES SERVICES ASSOCIÉS
         handleAddBuilding() {
+            console.log("ok");
+
+            const services = [
+                {
+                    name: 'Service 1',
+                    level: 1,
+                    capacity: 50,
+                    occupation: 0,
+                    earningPerSecond: 5,
+                    lossPerSecond: 0,
+                    totalDeaths: 0,
+                    totalHealed: 0
+                },
+                {
+                    name: 'Service 2',
+                    level: 1,
+                    capacity: 30,
+                    occupation: 0,
+                    earningPerSecond: 3,
+                    lossPerSecond: 1,
+                    totalDeaths: 0,
+                    totalHealed: 0
+                },
+                {
+                    name: 'Service 3',
+                    level: 1,
+                    capacity: 30,
+                    occupation: 0,
+                    earningPerSecond: 3,
+                    lossPerSecond: 1,
+                    totalDeaths: 0,
+                    totalHealed: 0
+                },
+                {
+                    name: 'Service 4',
+                    level: 1,
+                    capacity: 30,
+                    occupation: 0,
+                    earningPerSecond: 3,
+                    lossPerSecond: 1,
+                    totalDeaths: 0,
+                    totalHealed: 0
+                },
+                {
+                    name: 'Service 5',
+                    level: 1,
+                    capacity: 30,
+                    occupation: 0,
+                    earningPerSecond: 3,
+                    lossPerSecond: 1,
+                    totalDeaths: 0,
+                    totalHealed: 0
+                }
+            ];
+
+            // Générer un ID unique pour le bâtiment
+            const buildingId = `Hôpital${this.buildings.length + 1}`;
+
+            // Associer le buildingId aux services
+            services.forEach(service => service.buildingId = buildingId);
+
+            // Calculer les valeurs totales à partir des services
+            const totalCapacity = services.reduce((sum, s) => sum + s.capacity, 0);
+            const totalOccupation = services.reduce((sum, s) => sum + s.occupation, 0);
+            const totalEarningPerSecond = services.reduce((sum, s) => sum + s.earningPerSecond, 0);
+            const totalLossPerSecond = services.reduce((sum, s) => sum + s.lossPerSecond, 0);
+
             const newBuilding = {
-                id: Date.now(),
-                type: 'building1',
-                totalCapacity: 100,
-                occupation: 0,
-                earningPerSecond: 10,
-                lossPerSecond: 0,
+                id: buildingId,
+                level: 1,
+                Capacity: totalCapacity,
+                occupation: totalOccupation,
+                earningPerSecond: totalEarningPerSecond,
+                lossPerSecond: totalLossPerSecond,
                 totalDeaths: 0,
                 totalHealed: 0,
                 position: { x: Math.random() * 1500, y: Math.random() * 600 },
                 cost: 100, // Coût du bâtiment
                 imageUrl: new URL('@/assets/buildings/building1.png', import.meta.url).href,
-
-                // Ajout des services associés au bâtiment
-                services: [
-                    {
-                        id: `${Date.now()}-1`, // Générer un ID unique pour chaque service
-                        name: 'Service 1',
-                        capacity: 50,
-                        occupation: 0,
-                        earningPerSecond: 5,
-                        lossPerSecond: 0,
-                        buildingId: Date.now()  // Lier ce service au bâtiment parent
-                    },
-                    {
-                        id: `${Date.now()}-2`, // Générer un ID unique pour chaque service
-                        name: 'Service 2',
-                        capacity: 30,
-                        occupation: 0,
-                        earningPerSecond: 3,
-                        lossPerSecond: 1,
-                        buildingId: Date.now()  // Lier ce service au bâtiment parent
-                    }
-                ]
+                services
             };
-
+            console.log(newBuilding);
             this.addBuilding(newBuilding);
         }
-
     }
 };
 </script>
