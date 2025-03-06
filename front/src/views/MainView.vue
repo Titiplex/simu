@@ -39,15 +39,42 @@ export default {
             const newBuilding = {
                 id: Date.now(),
                 type: 'building1',
-                //position aléatoire sur l'écran
+                totalCapacity: 100,
+                occupation: 0,
+                earningPerSecond: 10,
+                lossPerSecond: 0,
+                totalDeaths: 0,
+                totalHealed: 0,
                 position: { x: Math.random() * 1500, y: Math.random() * 600 },
-                //position fixe
-                //position: { x: 200, y: 200 },
                 cost: 100, // Coût du bâtiment
-                imageUrl: new URL('@/assets/buildings/building1.png', import.meta.url).href // Correction de l'importation de l'image
+                imageUrl: new URL('@/assets/buildings/building1.png', import.meta.url).href,
+
+                // Ajout des services associés au bâtiment
+                services: [
+                    {
+                        id: `${Date.now()}-1`, // Générer un ID unique pour chaque service
+                        name: 'Service 1',
+                        capacity: 50,
+                        occupation: 0,
+                        earningPerSecond: 5,
+                        lossPerSecond: 0,
+                        buildingId: Date.now()  // Lier ce service au bâtiment parent
+                    },
+                    {
+                        id: `${Date.now()}-2`, // Générer un ID unique pour chaque service
+                        name: 'Service 2',
+                        capacity: 30,
+                        occupation: 0,
+                        earningPerSecond: 3,
+                        lossPerSecond: 1,
+                        buildingId: Date.now()  // Lier ce service au bâtiment parent
+                    }
+                ]
             };
+
             this.addBuilding(newBuilding);
         }
+
     }
 };
 </script>
