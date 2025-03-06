@@ -1,8 +1,10 @@
 <template>
     <div class="window">
         <div class="window-content">
-            <button class="close-button" v-on:click="close()">Fermer</button>
-            <h2>{{ building.type }}</h2>
+            <div class="window-header">
+                <h3>{{ building.id }}</h3>
+                <span class="close-button" v-on:click="close()">&#10005;</span>
+            </div>
             <div class="building-info">
                 <p>Capacité totale: {{ building.totalCapacity }}</p>
                 <p>Occupation: {{ building.occupation }}</p>
@@ -40,7 +42,7 @@ export default {
 
 <style scoped>
 .window {
-    position: fixed;
+    position: absolute;
     bottom: 0;
     right: 0;
     width: 300px;
@@ -52,31 +54,36 @@ export default {
     overflow: hidden;
     z-index: 100;
     left: 0;
-    margin-bottom: -50vh;
+    /* margin-bottom: -50vh; */
     transition: ease-in-out 0.7s;
-    /* transform: translateY(-50vh); */
 }
 .window.translate {
     transform: translateY(-50vh);
 }
+
+.window .window-header {
+    background-color: #f1f1f1;
+    /* padding: 10px; */
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .window-content {
     padding: 20px;
-    height: 100%;
+    height: calc(100% - 50px); /* Adjust height to account for header */
     overflow-y: auto;
 }
 
 .close-button {
-    background-color: #ff4444;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
+    font-size: 20px;
     cursor: pointer;
-    margin-bottom: 10px;
+    color: #ff4444;
 }
 
 .close-button:hover {
-    background-color: #cc0000;
+    color: #cc0000;
 }
 
 .building-info, .services-info {
