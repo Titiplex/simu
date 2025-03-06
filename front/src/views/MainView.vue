@@ -120,7 +120,27 @@ export default {
             };
             console.log(newBuilding);
             this.addBuilding(newBuilding);
+        },
+        updateMoney() {
+            let totalEarnings = 0;
+            let totalLosses = 0;
+
+            this.buildings.forEach(building => {
+                totalEarnings += building.earningPerSecond;
+                totalLosses += building.lossPerSecond;
+            });
+
+            // Mettre à jour l'argent en fonction des gains et pertes
+            this.money += totalEarnings - totalLosses;
         }
+    },
+    mounted() {
+        // Lancer la mise à jour automatique de l'argent toutes les secondes
+        this.moneyInterval = setInterval(this.updateMoney, 1000);
+    },
+    beforeUnmount() {
+        // Nettoyer l'intervalle quand le composant est détruit
+        clearInterval(this.moneyInterval);
     }
 };
 </script>
