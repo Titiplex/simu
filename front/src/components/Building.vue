@@ -6,7 +6,6 @@
         <Modal id="modal" v-if="isModalOpen" 
                :building="building" 
                @close="toggleModal"
-               class="translate"
                 />
     </div>
 </template>
@@ -35,7 +34,19 @@ export default {
     },
     methods: {
         toggleModal() {
-            this.isModalOpen = !this.isModalOpen;
+            if(!this.isModalOpen) {
+                this.isModalOpen = true;
+                setTimeout(() => {
+                    document.getElementById('modal').classList.toggle('translate');
+                }, 100);
+            } else {
+                setTimeout(() => {
+                    document.getElementById('modal').classList.toggle('translate');
+                }, 100);
+                setTimeout(() => {
+                    this.isModalOpen = !false;
+                }, 700);
+            }
         },
     }
 };
