@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * Représente une unité hospitalière modélisée comme une "cellule"
- * dans l'analogie de l'écoulement. Chaque unité a – * altitude (H_i) * . Charge courante (W_i) *. Taux d'absorption (alpha_i) *   . Statut "obstacle" ou non
+ * dans l'analogie de l'écoulement. Chaque unité a – * altitude (H_i) *. Charge courante (W_i) *. Taux d'absorption (alpha_i) * . Statut "obstacle" ou non
  *   — liste de voisins pour calculer les flux
  */
 @Getter
@@ -16,10 +16,10 @@ public class HospitalUnit {
 
     private final String name;            // Nom du service (ex. "Urgences", "Chirurgie", etc.)
     private final double altitude;        // H_i : hauteur de base (influence la hauteur totale)
-    private double currentLoad;           // W_i(t) : charge à l'instant t
+    private int currentLoad;           // W_i(t) : charge à l'instant t
     private final double absorptionRate;  // alpha_i : fraction absorbée chaque pas de temps
     /**
-     * -- GETTER --
+     * — GETTER —
      *  Contrôle ou non le statut d'obstacle.
      */
     @Setter
@@ -28,14 +28,14 @@ public class HospitalUnit {
     private double maxCapacity;           // Pour modéliser une capacité théorique du service
 
     /**
-     * -- GETTER --
+     * — GETTER —
      *  Retourne la liste des voisins (adjacents) de cette unité.
      */
     // Liste des unités voisines (pour calculer flux entre elles)
     private final List<HospitalUnit> neighbors;
 
     /**
-     * -- GETTER --
+     * — GETTER —
      *  Nombre de patients arrivant de l'extérieur ce pas de temps
      *  (mis à jour par la logique d'événement).
      */
@@ -53,7 +53,7 @@ public class HospitalUnit {
         this.absorptionRate = absorptionRate;
         this.maxCapacity = maxCapacity;
         this.obstacle = isObstacle;
-        this.currentLoad = 0.0;
+        this.currentLoad = 0;
         this.neighbors = new ArrayList<>();
         this.externalArrivals = 0.0;
     }
@@ -76,7 +76,7 @@ public class HospitalUnit {
      */
     public void applyAbsorption() {
         double absorbed = currentLoad * absorptionRate;
-        currentLoad -= absorbed;
+        currentLoad -= (int) absorbed;
         // Variante : currentLoad = currentLoad * (1 - absorptionRate);
     }
 
@@ -84,19 +84,19 @@ public class HospitalUnit {
      * Ajuste la charge en ajoutant un certain nombre de patients.
      */
     public void addPatients(double number) {
-        currentLoad += number;
+        currentLoad += (int) number;
         if (currentLoad > maxCapacity) {
             // On peut imaginer un seuil ou un comportement quand
-            // la capacité est dépassée (ex: saturé).
+            // la capacité est dépassée (ex : saturé).
             // Pour le moment, on se contente d'autoriser le dépassement,
-            // ou bien on force currentLoad = maxCapacity.
+            // ou bien, on force currentLoad = maxCapacity.
         }
     }
 
     /**
      * Retire un certain nombre de patients (par ex, si on en envoie vers d'autres services).
      */
-    public void removePatients(double number) {
+    public void removePatients(int number) {
         currentLoad -= number;
         if (currentLoad < 0) {
             currentLoad = 0;

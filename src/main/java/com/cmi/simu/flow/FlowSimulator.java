@@ -17,7 +17,7 @@ public class FlowSimulator {
     private final List<HospitalUnit> units;
     private final FlowManager flowManager;
 
-    // Pour éviter de mettre à jour "au fil de l'eau" et fausser le calcul
+    // Pour éviter de mettre à jour "au fil de l'eau" et fausser le calcul,
     // on stocke d'abord les flux dans cette map : (i->j) -> flux
     private final Map<String, Double> fluxMap;
 
@@ -30,7 +30,7 @@ public class FlowSimulator {
     /**
      * Exécute une itération (un pas de temps) :
      *   1) Réinitialise la fluxMap
-     *   2) Calcule tous les flux sortants i->j
+     *   2) Calcule tous les flux sortants i→j
      *   3) Applique ces flux pour mettre à jour la charge
      *   4) Gère l'absorption, les arrivées extérieures, etc.
      */
@@ -86,7 +86,7 @@ public class FlowSimulator {
             // On applique ensuite les arrivées extérieures
             newLoad += u.getExternalArrivals();
             // On met à jour
-            u.removePatients(oldLoad); // on retire la totalité "ancienne"
+            u.removePatients((int) Math.floor(oldLoad)); // on retire la totalité "ancienne".
             u.addPatients(newLoad);    // on pose la nouvelle
 
             // Remettre les arrivées à 0 après usage (optionnel si on les met à jour à chaque itération)
