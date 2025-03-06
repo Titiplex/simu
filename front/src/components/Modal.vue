@@ -1,6 +1,7 @@
 <template>
-    <div class="modal-overlay">
-        <div class="modal-content">
+    <div class="window">
+        <div class="window-content">
+            <button class="close-button" v-on:click="close()">Fermer</button>
             <h2>{{ building.type }}</h2>
             <div class="building-info">
                 <p>Capacité totale: {{ building.totalCapacity }}</p>
@@ -16,7 +17,6 @@
                     <p>Occupation: {{ service.occupation }}</p>
                 </div>
             </div>
-            <button class="close-button" v-on:click="close()">Fermer</button>
         </div>
     </div>
 </template>
@@ -39,26 +39,44 @@ export default {
 </script>
 
 <style scoped>
-.modal-overlay {
+.window {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    bottom: 0;
+    right: 0;
+    width: 300px;
+    height: 400px;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
     z-index: 100;
+    left: 0;
+    margin-bottom: -50vh;
+    transition: ease-in-out 0.7s;
+    /* transform: translateY(-50vh); */
+}
+.window.translate {
+    transform: translateY(-50vh);
+}
+.window-content {
+    padding: 20px;
+    height: 100%;
+    overflow-y: auto;
 }
 
-.modal-content {
-    background-color: white;
-    padding: 20px;
-    border-radius: 8px;
-    max-width: 500px;
-    width: 90%;
-    color: black;
+.close-button {
+    background-color: #ff4444;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.close-button:hover {
+    background-color: #cc0000;
 }
 
 .building-info, .services-info {
@@ -70,19 +88,5 @@ export default {
     padding: 10px;
     margin: 10px 0;
     border-radius: 4px;
-}
-
-.close-button {
-    background-color: #ff4444;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
-    cursor: pointer;
-    margin-top: 10px;
-}
-
-.close-button:hover {
-    background-color: #cc0000;
 }
 </style>

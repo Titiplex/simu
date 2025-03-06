@@ -3,9 +3,10 @@
         <button @click="toggleModal">
             <img :src="building.imageUrl" :alt="building.type" class="building" :style="buildingStyle" />
         </button>
-        <Modal v-if="isModalOpen" 
+        <Modal id="modal" v-if="isModalOpen" 
                :building="building" 
                @close="toggleModal"
+               class="translate"
                 />
     </div>
 </template>
