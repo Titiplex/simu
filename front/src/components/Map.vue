@@ -1,7 +1,7 @@
 <template>
     <div class="map-container">
         <img src="@/assets/map.png" alt="Map" class="map" />
-        <Building v-for="(building, index) in buildings" :key="index" :building="building" />
+        <!-- <Building v-for="(building, index) in buildings" :key="index" :building="building" /> -->
     </div>
 </template>
 
@@ -20,9 +20,9 @@ export default {
         };
     },
     methods: {
-        addBuilding(building) {
-            this.buildings.push(building); // Ajouter un bâtiment à la carte
-        }
+        // addBuilding(building) {
+        //     this.buildings.push(building); // Ajouter un bâtiment à la carte
+        // }
     }
 };
 </script>
