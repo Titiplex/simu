@@ -3,7 +3,11 @@
         <MoneyBar :money="money" />
         <Map :money="money" @add-building="addBuilding" />
         <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital</button>
-        <Building v-for="(building, index) in buildings" :key="index" :building="building" />
+        <Building v-for="(building, index) in buildings" :key="index" :building="building" @open="openModal"/>
+        <Modal v-if="isModalOpen"
+            :building="selectedBuilding"
+            @close="isModalOpen = false"
+        />
     </div>
 </template>
 
@@ -11,21 +15,31 @@
 import MoneyBar from '@/components/MoneyBar.vue';
 import Map from '@/components/Map.vue';
 import Building from '@/components/Building.vue';
+import Modal from '@/components/Modal.vue';
 
 export default {
     name: 'MainView',
     components: {
         MoneyBar,
         Map,
-        Building
+        Building,
+        Modal
     },
     data() {
         return {
             money: 1000, // Argent initial
-            buildings: [] // Liste des bâtiments ajoutés
+            buildings: [], // Liste des bâtiments ajoutés
+            isModalOpen: false,
         };
     },
     methods: {
+        openModal(building) {
+            this.isModalOpen = false;
+            console.log(building.id);
+            this.selectedBuilding = building;
+            this.isModalOpen = true;
+        },
+
         //PUSH LES BUILDINGS DANS LA LISTE
         addBuilding(building) {
             if (this.money >= building.cost) {

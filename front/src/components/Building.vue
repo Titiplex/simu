@@ -1,29 +1,19 @@
 <template>
     <div>
-        <button @click="toggleModal">
-            <img :src="building.imageUrl" :alt="building.type" class="building" :style="buildingStyle" />
+        <button v-on:click="$emit('open', building)">
+            <img :src="building.imageUrl" :alt="building.id" class="building" :style="buildingStyle" />
         </button>
-        <Modal id="modal" v-if="isModalOpen" 
-               :building="building" 
-               @close="toggleModal"
-               class="translate"
-                />
     </div>
 </template>
 
 <script>
-import Modal from "@/components/Modal.vue";
-
 export default {
     name: 'Building',
-    components: {
-        Modal
-    },
-    props: ['building'],
-    data() {
-        return {
-            isModalOpen: false
-        };
+    props: {
+        building: {
+            type: Object,
+            required: true
+        }
     },
     computed: {
         buildingStyle() {
@@ -32,11 +22,6 @@ export default {
                 left: `${this.building.position.x}px` // Position horizontale
             };
         }
-    },
-    methods: {
-        toggleModal() {
-            this.isModalOpen = !this.isModalOpen;
-        },
     }
 };
 </script>

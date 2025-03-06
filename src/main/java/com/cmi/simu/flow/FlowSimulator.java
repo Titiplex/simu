@@ -37,6 +37,15 @@ public class FlowSimulator {
     public void simulateOneStep() {
         fluxMap.clear();
 
+        // --- 1) LOG des arrivées externes avant de calculer les flux
+        for (HospitalUnit unit : units) {
+            double arrivals = unit.getExternalArrivals();
+            if (arrivals > 0) {
+                System.out.printf("[LOG] Arrivee : %.2f patients dans %s\n",
+                        arrivals, unit.getName());
+            }
+        }
+
         // 1) Calcul des flux i->j
         for (HospitalUnit i : units) {
             double availableLoad = i.getCurrentLoad();  // charge dispo avant écoulement
@@ -53,6 +62,11 @@ public class FlowSimulator {
                 if (flux > 0) {
                     String key = buildKey(i, j);
                     fluxMap.put(key, flux);
+
+                    // LOG de ce flux
+                    System.out.printf("[LOG] Flux : %.2f patients de %s vers %s\n",
+                            flux, i.getName(), j.getName());
+
                     // On diminue la charge disponible au fur et à mesure
                     availableLoad -= flux;
                     if (availableLoad <= 0) break;
@@ -89,13 +103,26 @@ public class FlowSimulator {
             u.removePatients((int) Math.floor(oldLoad)); // on retire la totalité "ancienne".
             u.addPatients(newLoad);    // on pose la nouvelle
 
+            // LOG mise à jour si variation notable
+            if (Math.abs(newLoad - oldLoad) > 1e-9) {
+                System.out.printf("[LOG] Mise a jour : %s passe de %.2f a %.2f\n",
+                        u.getName(), oldLoad, newLoad);
+            }
+
             // Remettre les arrivées à 0 après usage (optionnel si on les met à jour à chaque itération)
             u.setExternalArrivals(0.0);
         }
 
         // 3) Appliquer l'absorption
         for (HospitalUnit u : units) {
-            u.applyAbsorption();
+            double beforeAbs = u.getCurrentLoad();
+            u.applyAbsorption(); // la méthode interne peut fixer un max, ou décrémenter
+            double afterAbs = u.getCurrentLoad();
+
+            if (Math.abs(afterAbs - beforeAbs) > 1e-9) {
+                System.out.printf("[LOG] Absorption dans %s : charge de %.2f vers %.2f\n",
+                        u.getName(), beforeAbs, afterAbs);
+            }
         }
     }
 
@@ -105,6 +132,16 @@ public class FlowSimulator {
     public void runSimulation(int steps) {
         for (int t = 0; t < steps; t++) {
             simulateOneStep();
+
+            // Après chaque étape, on affiche un résumé global
+            System.out.println("=== Time " + t + " ===");
+            double totalPatients = 0.0;
+            for (HospitalUnit u : units) {
+                double load = u.getCurrentLoad();
+                totalPatients += load;
+                System.out.printf("    %s: load=%.2f\n", u.getName(), load);
+            }
+            System.out.println("    -> Total patients : " + totalPatients + "\n");
         }
     }
 
@@ -122,7 +159,7 @@ public class FlowSimulator {
     }
 
     private HospitalUnit parseTarget(String key) {
-        // Après la flèche "->"
+        // Après la flèche "→"
         String[] parts = key.split("->");
         String targetName = parts[1];
         return findUnitByName(targetName);
