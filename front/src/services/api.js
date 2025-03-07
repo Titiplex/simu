@@ -45,7 +45,6 @@ export default {
         try {
             // const response = await axios.get(`${API_URL}/hospitals`);
             const response = await axios.get(`${API_URL}/hospitals/hospitals`);
-
             console.log("api requested")
             console.log(response.data);
             return response.data;

@@ -1,6 +1,5 @@
 <template>
     <div class="main-view">
-        <Hospitals />
         <MoneyBar :money="money" />
         <Map :money="money" @add-building="addBuilding" @open="openModal" />
         <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital: {{
@@ -16,7 +15,6 @@ import MoneyBar from '@/components/MoneyBar.vue';
 import Map from '@/components/Map.vue';
 import Building from '@/components/Building.vue';
 import Modal from '@/components/Modal.vue';
-import Hospitals from '@/components/Hospitals.vue';
 import api from '@/services/api';
 
 export default {
@@ -26,7 +24,12 @@ export default {
         Map,
         Building,
         Modal,
-        Hospitals
+    },
+    props: {
+        buildings: {
+            type: Array,
+            required: true
+        }
     },
     data() {
         return {
@@ -47,6 +50,9 @@ export default {
         };
     },
     methods: {
+        updateBuildings(updatedBuildings) {
+            this.buildings = updatedBuildings;
+        },
         openModal(element) {
             // Récupérer l'ID du bâtiment depuis l'élément
             const buildingId = element.dataset.buildingId;
@@ -119,9 +125,9 @@ export default {
                 return;
             }
 
-            const services = [
+            let services = [
                 {
-                    name: 'Service 1',
+                    name: 'Chirurgie',
                     level: 1,
                     capacity: 50,
                     occupation: 0,
@@ -131,7 +137,7 @@ export default {
                     totalHealed: 0
                 },
                 {
-                    name: 'Service 2',
+                    name: 'Bloque',
                     level: 1,
                     capacity: 30,
                     occupation: 2,
@@ -141,7 +147,7 @@ export default {
                     totalHealed: 0
                 },
                 {
-                    name: 'Service 3',
+                    name: 'Urgences',
                     level: 1,
                     capacity: 20,
                     occupation: 10,
@@ -151,7 +157,7 @@ export default {
                     totalHealed: 0
                 },
                 {
-                    name: 'Service 4',
+                    name: 'Medecine',
                     level: 1,
                     capacity: 10,
                     occupation: 0,
@@ -202,15 +208,57 @@ export default {
 
             // Mettre à jour l'argent en fonction des gains et pertes
             this.money += totalEarnings - totalLosses;
+        },
+
+        async fetchAndUpdateHospitals() {
+            try {
+                const hospitals = await api.fetchHospitals();
+                this.buildings = hospitals.map(hospital => ({
+                    id: hospital.id,
+                    level: 1,
+                    capacity: hospital.services.reduce((sum, s) => sum + s.maxCapacity, 0),
+                    occupation: hospital.services.reduce((sum, s) => sum + s.occupiedCapacity, 0),
+                    services: hospital.services.map(service => ({
+                        name: service.name,
+                        level: 1,
+                        capacity: service.maxCapacity,
+                        occupation: service.occupiedCapacity,
+                        earningPerHealed: 3,
+                        lossPerSecond: 2,
+                        totalDeaths: 0,
+                        totalHealed: 0
+                    })),
+                    earningPerSecond: 0,
+                    lossPerSecond: 0,
+                    totalDeaths: 0,
+                    totalHealed: 0,
+                    imageUrl: new URL('@/assets/parts/buildingTiles_041.png', import.meta.url).href
+                }));
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour des hôpitaux:', error);
+            }
         }
     },
     mounted() {
         // Lancer la mise à jour automatique de l'argent toutes les secondes
         this.moneyInterval = setInterval(this.updateMoney, 1000);
+
+        // Chargement initial
+        this.fetchAndUpdateHospitals();
+
+        // Mise à jour toutes les 5 secondes
+        this.updateInterval = setInterval(() => {
+            this.fetchAndUpdateHospitals();
+        }, 5000);
     },
     beforeUnmount() {
         // Nettoyer l'intervalle quand le composant est détruit
         clearInterval(this.moneyInterval);
+
+        // Nettoyage de l'intervalle
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+        }
     }
 };
 </script>
