@@ -33,7 +33,17 @@ export default {
         } catch (error) {
             console.error('Erreur lors de l’envoi du bâtiment:', error);
         }
-    }
+    },
+
+    async fetchHospitals() {
+        try {
+            const response = await axios.get(`${API_URL}/hospitals`);
+            return response.data;
+        } catch (error) {
+            console.error('Erreur lors de la récupération des hôpitaux:', error);
+            return [];
+        }
+    },
 };
 
 
