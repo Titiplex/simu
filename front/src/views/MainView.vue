@@ -1,9 +1,9 @@
 <template>
     <div class="main-view">
         <MoneyBar :money="money" />
-        <Map :money="money" @add-building="addBuilding" />
-        <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital</button>
-        <Building v-for="(building, index) in buildings" :key="index" :building="building" @open="openModal" />
+        <Map :money="money" @add-building="addBuilding" @open="openModal" />
+        <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital: {{ buildings.length == 0 ? "100" : Math.floor(Math.pow(buildings.length, 1.5)*100) }}</button>
+        <!-- <Building v-for="(building, index) in buildings" :key="index" :building="building" @open="openModal" /> -->
         <Modal v-if="isModalOpen" :building="selectedBuilding" @close="isModalOpen = false" />
     </div>
 </template>
@@ -27,29 +27,70 @@ export default {
             money: 1000, // Argent initial
             buildings: [], // Liste des bâtiments ajoutés
             isModalOpen: false,
+            possiblePositions: [
+                { row: 23, col: 23 },
+                { row: 17, col: 17 },
+                { row: 32, col: 23 },
+                { row: 26, col: 29 },
+                { row: 26, col: 17 },
+                { row: 20, col: 11 },
+                { row: 26, col: 20 },
+                { row: 29, col: 26 },
+                { row: 17, col: 23 }
+            ],
         };
     },
     methods: {
-        openModal(building) {
-            this.isModalOpen = false;
-            console.log(building.id);
-            this.selectedBuilding = building;
-            this.isModalOpen = true;
+        openModal(element) {
+            // Récupérer l'ID du bâtiment depuis l'élément
+            const buildingId = element.dataset.buildingId;
+            // Trouver le bâtiment correspondant dans la liste
+            const building = this.buildings.find(b => b.id === buildingId);
+            
+            if (building) {
+                this.selectedBuilding = building;
+                this.isModalOpen = true;
+            }
         },
 
-        //PUSH LES BUILDINGS DANS LA LISTE
         addBuilding(building) {
-            if (this.money >= building.cost) {
-                this.buildings.push(building); // Ajouter le bâtiment à la liste
-                this.money -= building.cost; // Déduire l'argent pour l'achat du bâtiment
+            const cost = Math.floor(Math.pow(this.buildings.length, 1.5)*100);
+            if (this.money >= cost) {
+                const plot = document.getElementById(`city-${building.row}-${building.col}`);
+                if (plot) {
+                    plot.src = building.imageUrl;
+                    plot.dataset.buildingId = building.id; // Stocker l'ID du bâtiment
+                    plot.classList.add('hospital');
+                    this.buildings.push(building);
+                    this.money -= cost;
+                }
             } else {
                 alert("Pas assez d'argent !");
             }
         },
 
+        findAvailablePosition() {
+            return this.possiblePositions.find(pos => {
+                const existingBuilding = this.buildings.find(b => 
+                    b.row === pos.row && b.col === pos.col
+                );
+                return !existingBuilding;
+            });
+        },
+
         //CRÉER LES BUILDINDS AVEC LES SERVICES ASSOCIÉS
         handleAddBuilding() {
-            console.log("ok");
+            const cost = Math.floor(Math.pow(this.buildings.length, 1.5)*100);
+            if(this.money < cost) {
+                alert("Pas assez d'argent !");
+                return;
+            }
+            const position = this.findAvailablePosition();
+            
+            if (!position) {
+                alert("Impossible de construire plus d'hôpitaux - plus de place disponible !");
+                return;
+            }
 
             const services = [
                 {
@@ -57,7 +98,7 @@ export default {
                     level: 1,
                     capacity: 50,
                     occupation: 0,
-                    earningPerHealed: 5,
+                    earningPerHealed: 2,
                     lossPerSecond: 0,
                     totalDeaths: 0,
                     totalHealed: 0
@@ -66,55 +107,43 @@ export default {
                     name: 'Service 2',
                     level: 1,
                     capacity: 30,
-                    occupation: 0,
-                    earningPerHealed: 5,
-                    lossPerSecond: 1,
+                    occupation: 2,
+                    earningPerHealed: 3,
+                    lossPerSecond: 2,
                     totalDeaths: 0,
                     totalHealed: 0
                 },
                 {
                     name: 'Service 3',
                     level: 1,
-                    capacity: 30,
-                    occupation: 0,
-                    earningPerHealed: 5,
-                    lossPerSecond: 1,
+                    capacity: 20,
+                    occupation: 10,
+                    earningPerHealed: 3,
+                    lossPerSecond: 2,
                     totalDeaths: 0,
                     totalHealed: 0
                 },
                 {
                     name: 'Service 4',
                     level: 1,
-                    capacity: 30,
+                    capacity: 10,
                     occupation: 0,
-                    earningPerHealed: 5,
-                    lossPerSecond: 1,
-                    totalDeaths: 0,
-                    totalHealed: 0
-                },
-                {
-                    name: 'Service 5',
-                    level: 1,
-                    capacity: 30,
-                    occupation: 0,
-                    earningPerHealed: 5,
-                    lossPerSecond: 1,
+                    earningPerHealed: 3,
+                    lossPerSecond: 2,
                     totalDeaths: 0,
                     totalHealed: 0
                 }
+
+                
             ];
 
-            // Générer un ID unique pour le bâtiment
             const buildingId = `Hôpital${this.buildings.length + 1}`;
-
-            // Associer le buildingId aux services
             services.forEach(service => service.buildingId = buildingId);
 
-            // Calculer les valeurs totales à partir des services
             const totalCapacity = services.reduce((sum, s) => sum + s.capacity, 0);
             const totalOccupation = services.reduce((sum, s) => sum + s.occupation, 0);
-            const totalEarningPerSecond = services.reduce((sum, s) => sum + s.earningPerHealed, 0);
-            const totalLossPerSecond = services.reduce((sum, s) => sum + s.lossPerSecond, 0);
+            const totalEarningPerSecond = services.reduce((sum, s) => sum + s.earningPerHealed*s.occupation, 0);
+            const totalLossPerSecond = services.reduce((sum, s) => sum + s.lossPerSecond*s.occupation, 0);
 
             const newBuilding = {
                 id: buildingId,
@@ -125,12 +154,17 @@ export default {
                 lossPerSecond: totalLossPerSecond,
                 totalDeaths: 0,
                 totalHealed: 0,
-                position: { x: Math.random() * 1500, y: Math.random() * 600 },
-                cost: 100, // Coût du bâtiment
+                row: position.row,
+                col: position.col,
+                rent: totalCapacity*0.1,
                 imageUrl: new URL('@/assets/parts/buildingTiles_041.png', import.meta.url).href,
                 services
             };
-            console.log(newBuilding);
+
+            // Ajouter le bâtiment à la liste des bâtiments
+            this.buildings.push(newBuilding);
+            
+            // Appeler la méthode d'ajout avec le nouveau bâtiment
             this.addBuilding(newBuilding);
         },
         updateMoney() {
@@ -138,8 +172,9 @@ export default {
             let totalLosses = 0;
 
             this.buildings.forEach(building => {
+                building.rent = building.capacity*0.1;
                 totalEarnings += building.earningPerSecond;
-                totalLosses += building.lossPerSecond;
+                totalLosses += building.lossPerSecond + building.rent;
             });
 
             // Mettre à jour l'argent en fonction des gains et pertes
