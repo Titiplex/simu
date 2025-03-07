@@ -1,176 +1,232 @@
 package com.cmi.simu.flow;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
- * Coordonne la simulation pas à pas sur l'ensemble des unités.
- * <p>
- * 1) Calculer tous les flux F_{i→j} de manière simultanée
- *    (stockage dans une structure temporaire).
- * 2) Appliquer ces flux pour mettre à jour W_i(t+1).
- * 3) Appliquer l'absorption, gérer les arrivées extérieures, etc.
+ * Coordonne la simulation:
+ * - Itération sur tous les services
+ * - Calcul des flux potentiels
+ * - Sélection des patients à transférer
+ * - Application du temps de traitement + sortie si soignés
+ * - Absorption
+ * - Gérer la saturation et éventuellement le refus
  */
 public class FlowSimulator {
 
     private final List<HospitalUnit> units;
     private final FlowManager flowManager;
 
-    // Pour éviter de mettre à jour "au fil de l'eau" et fausser le calcul,
-    // on stocke d'abord les flux dans cette map : (i->j) -> flux
-    private final Map<String, Double> fluxMap;
-
     public FlowSimulator(List<HospitalUnit> units, FlowManager flowManager) {
         this.units = units;
         this.flowManager = flowManager;
-        this.fluxMap = new HashMap<>();
     }
 
     /**
-     * Exécute une itération (un pas de temps) :
-     *   1) Réinitialise la fluxMap
-     *   2) Calcule tous les flux sortants i→j
-     *   3) Applique ces flux pour mettre à jour la charge
-     *   4) Gère l'absorption, les arrivées extérieures, etc.
+     * Effectue un pas de simulation :
+     * 1) Chaque unité accepte d'abord les arrivées extérieures.
+     * 2) On décrémente le temps de traitement de chaque patient,
+     * et on vérifie s'ils doivent sortir (si timeToTreat=0, ils sortent du système).
+     * 3) On calcule les flux potentiels i→j et on forme des listes de patients transférables.
+     * 4) On transfère effectivement les patients (en respectant staffCapacity, maxCapacity).
+     * 5) On applique l'absorption (patients qui sortent naturellement).
+     *
+     * @return Ceux qui sont sortis de l'hopital
      */
-    public void simulateOneStep() {
-        fluxMap.clear();
+    public Map<String, Integer> simulateOneStep() {
 
-        // --- 1) LOG des arrivées externes avant de calculer les flux
+        Map<String, Integer> sortis = new HashMap<>();
+
+        // 1) Arrivées extérieures + la map
         for (HospitalUnit unit : units) {
-            double arrivals = unit.getExternalArrivals();
-            if (arrivals > 0) {
-                System.out.printf("[LOG] Arrivee : %.2f patients dans %s\n",
-                        arrivals, unit.getName());
+            System.out.println("Accepted arrivals : " + unit.acceptExternalArrivals());
+            sortis.put(unit.getName(), 0);
+        }
+
+        // 2) Mettre à jour le temps de traitement / sortie définitive
+        for (HospitalUnit unit : units) {
+            Iterator<Patient> it = unit.getPatients().iterator();
+            while (it.hasNext()) {
+                Patient p = it.next();
+                // On incrémente le temps passé
+                p.incrementTimeInService();
+                // On décrémente la durée de traitement
+                p.decreaseTimeToTreat();
+                // Si le patient a fini son traitement, il sort du système
+                if (p.getTimeToTreat() <= 0) {
+                    it.remove();
+                    sortis.merge(unit.getName(), 1, Integer::sum);
+                }
             }
         }
 
-        // 1) Calcul des flux i->j
+        // 3) Calculer les flux potentiels
+        // On crée une structure pour stocker la liste de patients à transférer : (unit i → listOfPatients → j)
+        Map<String, List<Patient>> transferMap = new HashMap<>();
+
         for (HospitalUnit i : units) {
-            double availableLoad = i.getCurrentLoad();  // charge dispo avant écoulement
-            if (availableLoad <= 0 || i.isObstacle()) continue;
+            if (i.isObstacle()) continue;
 
-            // On calcule combien on transfère vers chaque voisin
-            for (HospitalUnit j : i.getNeighbors()) {
-                if (j == i) continue; // sûreté
-                double flux = flowManager.computeFlux(i, j);
-                // On ne peut pas transférer plus que la charge disponible de i
-                if (flux > availableLoad) {
-                    flux = availableLoad;
-                }
-                if (flux > 0) {
-                    String key = buildKey(i, j);
-                    fluxMap.put(key, flux);
+            int totalPatients = i.getPatients().size();
+            if (totalPatients == 0) continue;
 
-                    // LOG de ce flux
-                    System.out.printf("[LOG] Flux : %.2f patients de %s vers %s\n",
-                            flux, i.getName(), j.getName());
+            // On calcule la somme des flux potentiels vers chaque voisin
+            double totalFluxSum = 0.0;
+            List<HospitalUnit> neighbors = i.getNeighbors();
+            Map<HospitalUnit, Double> neighborFlux = new HashMap<>();
 
-                    // On diminue la charge disponible au fur et à mesure
-                    availableLoad -= flux;
-                    if (availableLoad <= 0) break;
+            for (HospitalUnit j : neighbors) {
+                double fluxValue = flowManager.computeFlux(i, j);
+                if (fluxValue > 0) {
+                    neighborFlux.put(j, fluxValue);
+                    totalFluxSum += fluxValue;
                 }
             }
-        }
 
-        // 2) Mise à jour W_i(t+1) après flux
-        //    On calcule d'abord le total sortant et entrant pour chaque unité
-        Map<HospitalUnit, Double> totalOut = new HashMap<>();
-        Map<HospitalUnit, Double> totalIn  = new HashMap<>();
-        for (HospitalUnit u : units) {
-            totalOut.put(u, 0.0);
-            totalIn.put(u, 0.0);
-        }
-
-        for (Map.Entry<String, Double> entry : fluxMap.entrySet()) {
-            String key = entry.getKey();
-            double flux = entry.getValue();
-            HospitalUnit i = parseSource(key);
-            HospitalUnit j = parseTarget(key);
-
-            totalOut.put(i, totalOut.get(i) + flux);
-            totalIn.put(j, totalIn.get(j) + flux);
-        }
-
-        // Appliquer la mise à jour
-        for (HospitalUnit u : units) {
-            double oldLoad = u.getCurrentLoad();
-            double newLoad = oldLoad - totalOut.get(u) + totalIn.get(u);
-            // On applique ensuite les arrivées extérieures
-            newLoad += u.getExternalArrivals();
-            // On met à jour
-            u.removePatients((int) Math.floor(oldLoad)); // on retire la totalité "ancienne".
-            u.addPatients(newLoad);    // on pose la nouvelle
-
-            // LOG mise à jour si variation notable
-            if (Math.abs(newLoad - oldLoad) > 1e-9) {
-                System.out.printf("[LOG] Mise a jour : %s passe de %.2f a %.2f\n",
-                        u.getName(), oldLoad, newLoad);
+            if (totalFluxSum <= 0) {
+                // pas de flux sortant
+                continue;
             }
 
-            // Remettre les arrivées à 0 après usage (optionnel si on les met à jour à chaque itération)
-            u.setExternalArrivals(0.0);
-        }
+            // On répartit les patients de i vers j proportionnellement au fluxValue
+            // en donnant la priorité d'abord aux patients URGENT, puis NORMAL, ensuite LOW
+            // → On trie la liste i.getPatients() par priorité
+            List<Patient> sortedPatients = new ArrayList<>(i.getPatients());
+            sortedPatients.sort((p1, p2) -> p1.getPriority().compareTo(p2.getPriority()));
 
-        // 3) Appliquer l'absorption
-        for (HospitalUnit u : units) {
-            double beforeAbs = u.getCurrentLoad();
-            u.applyAbsorption(); // la méthode interne peut fixer un max, ou décrémenter
-            double afterAbs = u.getCurrentLoad();
+            // On construit la distribution
+            for (HospitalUnit j : neighborFlux.keySet()) {
+                double fraction = neighborFlux.get(j) / totalFluxSum;
+                int nbTransfer = (int) Math.floor(fraction * totalPatients);
 
-            if (Math.abs(afterAbs - beforeAbs) > 1e-9) {
-                System.out.printf("[LOG] Absorption dans %s : charge de %.2f vers %.2f\n",
-                        u.getName(), beforeAbs, afterAbs);
+                // On va chercher dans sortedPatients, en partant par la plus haute priority
+                // (Si on considère URGENT < NORMAL < LOW comme ordre, il faut ajuster le comparateur.)
+                // Pour clarifier, je suppose ici URGENT < NORMAL < LOW → on transfère d'abord LOW.
+                // OU l'inverse, selon la logique souhaitée.
+
+                // Ex : on transfère les patients de plus "basse" priorité en premier ou l'inverse.
+                // Choisissons : on transfère d'abord les LOW, puis NORMAL, ensuite URGENT (l'idée : URGENT reste plus longtemps).
+                // À toi d'ajuster la logique souhaitée.
+
+                // On va simplifier en transférant "nbTransfer" patients depuis la queue de sortedPatients
+                List<Patient> subListToTransfer = new ArrayList<>();
+
+                // On prend nbTransfer patients depuis la fin (lowest priority) ou le début (highest) 
+                // selon la politique. Mettons qu'on transfère d'abord la "faible" priorité.
+                for (int c = 0; c < nbTransfer && !sortedPatients.isEmpty(); c++) {
+                    // On prend le dernier (faible prio).
+                    Patient p = sortedPatients.removeLast();
+                    subListToTransfer.add(p);
+                }
+
+                // Stockage dans transferMap
+                String key = buildKey(i, j);
+                transferMap.computeIfAbsent(key, k -> new ArrayList<>()).addAll(subListToTransfer);
             }
         }
+
+        // 4) Appliquer les transferts
+        // On retire les patients de leur unité source et on tente de les ajouter à la destination
+        for (String key : transferMap.keySet()) {
+            List<Patient> listToTransfer = transferMap.get(key);
+            if (listToTransfer.isEmpty()) continue;
+
+            HospitalUnit source = parseSource(key);
+            HospitalUnit target = parseTarget(key);
+
+            // Vérif staff capacity du target
+            // On considère qu'à chaque itération, target ne peut prendre que staffCapacity patients en plus
+            // (ou on peut ignorer staff capacity si on suppose qu'il s'applique seulement au traitement)
+            int canAccept = target.getMaxCapacity() - target.getPatients().size();
+            // On peut affiner en tenant compte du staffCapacity. 
+            // Ex: staffCapacity = nb de patients traités, 
+            // mais on peut limiter la prise de nouveaux patients si staff saturé...
+
+            // Couper la liste à canAccept
+            List<Patient> actuallyTransferred = new ArrayList<>();
+            for (int i = 0; i < listToTransfer.size() && i < canAccept; i++) {
+                actuallyTransferred.add(listToTransfer.get(i));
+            }
+
+            // Retrait du source
+            for (Patient p : actuallyTransferred) {
+                source.removePatient(p);
+            }
+            // Ajout au target
+            for (Patient p : actuallyTransferred) {
+                target.addPatient(p);
+            }
+            // (Si plus de patients que canAccept, ils restent dans la source,
+            //  ou on les envoie ailleurs → à affiner selon la logique.)
+        }
+
+        // 5) Absorption dans chaque unité
+        for (HospitalUnit u : units) {
+            sortis.merge(u.getName(), u.applyAbsorption(), Integer::sum);
+        }
+
+        return sortis;
     }
 
     /**
-     * Exécute la simulation sur plusieurs pas de temps
+     * Lance la simulation sur nbSteps étapes.
      */
-    public void runSimulation(int steps) {
-        for (int t = 0; t < steps; t++) {
-            simulateOneStep();
+    public Map<String, Integer> runOneStep(int t, ArrivalScenario scenario, List<HospitalUnit> units) {
 
-            // Après chaque étape, on affiche un résumé global
-            System.out.println("=== Time " + t + " ===");
-            double totalPatients = 0.0;
-            for (HospitalUnit u : units) {
-                double load = u.getCurrentLoad();
-                totalPatients += load;
-                System.out.printf("    %s: load=%.2f\n", u.getName(), load);
-            }
-            System.out.println("    -> Total patients : " + totalPatients + "\n");
+        // Met à jour externalArrivals dans chaque unité
+        // selon le scénario (ex. t=10 → afflux massif)
+        scenario.updateArrivals(t);
+
+        Map<String, Integer> sortis = simulateOneStep();
+
+        int totalPatients = 0;
+        for (HospitalUnit u : units) {
+            int load = u.getCurrentLoad();
+            totalPatients += load;
+            System.out.printf("  %s: load=%d (URGENT=%d, NORMAL=%d, LOW=%d)\n",
+                    u.getName(),
+                    load,
+                    countPriority(u.getPatients(), PriorityLevel.URGENT),
+                    countPriority(u.getPatients(), PriorityLevel.NORMAL),
+                    countPriority(u.getPatients(), PriorityLevel.LOW)
+            );
         }
+        System.out.println(" -> Total Patient = " + totalPatients);
+        System.out.println("--------------------------------");
+
+        return sortis;
     }
 
-    // --- Outils privés pour fluxMap ---
-
+    // --- Outils pour transferMap ---
     private String buildKey(HospitalUnit i, HospitalUnit j) {
         return i.getName() + "->" + j.getName();
     }
 
     private HospitalUnit parseSource(String key) {
-        // Avant la flèche "->"
         String[] parts = key.split("->");
-        String sourceName = parts[0];
-        return findUnitByName(sourceName);
+        return findUnit(parts[0]);
     }
 
     private HospitalUnit parseTarget(String key) {
-        // Après la flèche "→"
         String[] parts = key.split("->");
-        String targetName = parts[1];
-        return findUnitByName(targetName);
+        return findUnit(parts[1]);
     }
 
-    private HospitalUnit findUnitByName(String name) {
+    private HospitalUnit findUnit(String name) {
         for (HospitalUnit u : units) {
             if (u.getName().equals(name)) {
                 return u;
             }
         }
         return null;
+    }
+
+    private static int countPriority(List<Patient> plist, PriorityLevel prio) {
+        int c = 0;
+        for (Patient p : plist) {
+            if (p.getPriority() == prio) {
+                c++;
+            }
+        }
+        return c;
     }
 }

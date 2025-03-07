@@ -58,5 +58,4 @@ public class FlowManager {
             return lateralCoefficient * heightDiff;
         }
     }
-
 }

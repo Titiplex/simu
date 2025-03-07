@@ -1,7 +1,7 @@
 package routes.controller;
 
 
-import model.Hospital;
+import com.cmi.simu.flow.Hospital;
 import service.HospitalService;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,13 +27,30 @@ public class HospitalController {
         return hospitalService.getAllHospitals();
     }
 
+    // Route pour récupérer les services d'un hôpital spécifique avec capacité
+    @GetMapping("/{id}/services")
+    public List<Map<String, Object>> getHospitalServices(@PathVariable Long id) {
+        return hospitalService.getHospitalServices(id);
+    }
+
     @PostMapping
     public Hospital createHospital(@RequestBody Hospital hospital) {
         return hospitalService.createHospital(hospital);
     }
 
-    @GetMapping("/{id}")
-    public Hospital getHospitalById(@PathVariable Long id) {
-        return hospitalService.getHospitalById(id);
+    @DeleteMapping("/{id}/")
+    public String deleteHospital(@PathVariable Long id) {
+        boolean deleted = hospitalService.deleteHospital(id);
+        return deleted ? "Hôpital supprimé" : "Hôpital non trouvé";
+    }
+
+    @PostMapping("/{id}/services")
+    public void addMaxCapacity(@PathVariable Long id,
+                               @RequestBody Map<String, Object> UnitUpdateData){
+        // Récupérer les données envoyées
+        String unitName = (String) UnitUpdateData.get("serviceName");
+        double newMaxCapacity = (Double) UnitUpdateData.get("maxCapacity");
+
+        hospitalService.updateMaxCapacityUnit(id,unitName,newMaxCapacity);
     }
 }
