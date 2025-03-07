@@ -63,6 +63,15 @@ export default {
                 this.isModalOpen = true;
             }
         },
+        async addBuildingToAPI(building) {
+            try {
+                // Appel de la méthode addBuilding de l'API
+                const response = await api.addBuilding(building);
+                return response; // Retourne les données de l'API
+            } catch (error) {
+                console.error('Erreur lors de l’ajout du bâtiment:', error);
+            }
+        },
 
         async addBuilding(building) {
             const cost = Math.floor(Math.pow(this.buildings.length, 4)*100);
