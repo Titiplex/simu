@@ -26,7 +26,7 @@ public class HospitalController {
         HospitalController.hospitalService = hospitalService;
     }
 
-    @GetMapping
+    @GetMapping("/hospitals")
     public static List<Map<String, Object>> getAllHospitals() {
 
         Clock.addOneHour();
