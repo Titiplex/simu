@@ -3,11 +3,8 @@
         <MoneyBar :money="money" />
         <Map :money="money" @add-building="addBuilding" />
         <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital</button>
-        <Building v-for="(building, index) in buildings" :key="index" :building="building" @open="openModal"/>
-        <Modal v-if="isModalOpen"
-            :building="selectedBuilding"
-            @close="isModalOpen = false"
-        />
+        <Building v-for="(building, index) in buildings" :key="index" :building="building" @open="openModal" />
+        <Modal v-if="isModalOpen" :building="selectedBuilding" @close="isModalOpen = false" />
     </div>
 </template>
 
@@ -49,6 +46,7 @@ export default {
                 alert("Pas assez d'argent !");
             }
         },
+
         //CRÉER LES BUILDINDS AVEC LES SERVICES ASSOCIÉS
         handleAddBuilding() {
             console.log("ok");
@@ -129,7 +127,7 @@ export default {
                 totalHealed: 0,
                 position: { x: Math.random() * 1500, y: Math.random() * 600 },
                 cost: 100, // Coût du bâtiment
-                imageUrl: new URL('@/assets/buildings/building1.png', import.meta.url).href,
+                imageUrl: new URL('@/assets/parts/buildingTiles_041.png', import.meta.url).href,
                 services
             };
             console.log(newBuilding);
