@@ -32,7 +32,7 @@ onUnmounted(() => {
                 <ul>
                     <li v-for="service in hospital.services" :key="service.name">
                         <strong>{{ service.name }}</strong> - Charge actuelle: {{ service.currentLoad }}/{{
-                        service.maxCapacity }}
+                            service.maxCapacity }}
                     </li>
                 </ul>
             </li>

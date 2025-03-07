@@ -18,9 +18,15 @@ export default {
             const response = await axios.post(`${API_URL}/hospitals`, building);
             return response.data;
         } catch (error) {
-            console.error('Erreur lors de l’ajout du bâtiment:', error);
+            if (error.response) {
+                // Affiche la réponse complète de l'API, y compris le message d'erreur
+                console.error('Erreur lors de l’ajout du bâtiment:', error.response.data);
+            } else {
+                console.error('Erreur lors de l’ajout du bâtiment:', error.message);
+            }
         }
     },
+
 
     async updateMaxCapacity(buildingId, maxCapacity, serviceName) {
         try {
@@ -38,7 +44,7 @@ export default {
     async fetchHospitals() {
         try {
             const response = await axios.get(`${API_URL}/hospitals`);
-            console.log("ok");
+            console.log(response.data);
             return response.data;
         } catch (error) {
             console.error('Erreur lors de la récupération des hôpitaux:', error);

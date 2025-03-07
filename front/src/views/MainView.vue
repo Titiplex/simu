@@ -4,18 +4,20 @@
         <MoneyBar :money="money" />
         <Map :money="money" @add-building="addBuilding" @open="openModal" />
         <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital: {{
-            Math.floor(Math.pow(buildings.length, 2) *100) }}</button>
+            Math.floor(Math.pow(buildings.length, 2) * 100) }}</button>
         <!-- <Building v-for="(building, index) in buildings" :key="index" :building="building" @open="openModal" /> -->
         <Modal v-if="isModalOpen" :building="selectedBuilding" @close="isModalOpen = false" />
     </div>
 </template>
 
 <script>
+import axios from 'axios';
 import MoneyBar from '@/components/MoneyBar.vue';
 import Map from '@/components/Map.vue';
 import Building from '@/components/Building.vue';
 import Modal from '@/components/Modal.vue';
 import Hospitals from '@/components/Hospitals.vue';
+import api from '@/services/api';
 
 export default {
     name: 'MainView',
@@ -57,6 +59,16 @@ export default {
             }
         },
 
+        async addBuildingToAPI(building) {
+            try {
+                // Appel de la méthode addBuilding de l'API
+                const response = await api.addBuilding(building);
+                return response; // Retourne les données de l'API
+            } catch (error) {
+                console.error('Erreur lors de l’ajout du bâtiment:', error);
+            }
+        },
+
         addBuilding(building) {
             const cost = Math.floor(Math.pow(this.buildings.length, 2) * 100);
             if (this.money >= cost) {
@@ -68,6 +80,32 @@ export default {
                     this.buildings.push(building);
                     console.log(cost);
                     this.money -= cost;
+                }
+            } else {
+                alert("Pas assez d'argent !");
+            }
+        },
+
+        async addBuilding(building) {
+            const cost = Math.floor(Math.pow(this.buildings.length, 2) * 100);
+            if (this.money >= cost) {
+                const plot = document.getElementById(`city-${building.row}-${building.col}`);
+                if (plot) {
+                    plot.src = building.imageUrl;
+                    plot.dataset.buildingId = building.id; // Stocker l'ID du bâtiment
+                    plot.classList.add('hospital');
+
+                    try {
+                        // Appel API pour ajouter le bâtiment
+                        await this.addBuildingToAPI(building);
+
+                        // Ajout du bâtiment localement si l'API a réussi
+                        this.buildings.push(building);
+                        console.log('Bâtiment ajouté via l\'API:', building);
+                        this.money -= cost;
+                    } catch (error) {
+                        console.error('Erreur lors de l\'ajout du bâtiment via l\'API:', error);
+                    }
                 }
             } else {
                 alert("Pas assez d'argent !");
