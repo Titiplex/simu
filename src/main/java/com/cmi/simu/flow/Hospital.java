@@ -21,7 +21,7 @@ public class Hospital {
 
     @Getter @Setter
     private int id;               // Identifiant unique (ex. pour requête POST)
-    private final String name;           // Nom de l'hôpital
+    private String name;           // Nom de l'hôpital
 
     private final List<HospitalUnit> units;   // Services internes
     private final List<Hospital> neighbors;   // Autres hôpitaux connectés
@@ -40,6 +40,14 @@ public class Hospital {
         this.neighbors = new ArrayList<>();
         // Le flowManager et flowSimulator seront configurés plus tard
         this.flowManager = flowManager;
+        this.flowSimulator = new FlowSimulator(units, flowManager);
+    }
+
+    public Hospital() {
+        this.units = getHospitalUnits();
+        this.neighbors = new ArrayList<>();
+        // Le flowManager et flowSimulator seront configurés plus tard
+        this.flowManager = new FlowManager(1.0,0.3,2.0);
         this.flowSimulator = new FlowSimulator(units, flowManager);
     }
 

@@ -6,12 +6,16 @@ import com.cmi.simu.flow.Hospital;
 import com.cmi.simu.routes.service.HospitalService;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/hospitals") // URL de base
-@CrossOrigin(origins = "http://localhost:5173") // Autorise Vue.js en dev
+@CrossOrigin(origins = "*") // Autorise Vue.js en dev
 
 public class HospitalController {
 
@@ -39,7 +43,7 @@ public class HospitalController {
 
     @PostMapping
     public Hospital createHospital(@RequestBody Hospital hospital) {
-        return hospitalService.createHospital(hospital);
+        return hospitalService.createHospital();
     }
 
     @DeleteMapping("/{id}/")
