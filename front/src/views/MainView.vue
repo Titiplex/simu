@@ -164,6 +164,7 @@ export default {
     position: relative;
     width: 100%;
     height: 100vh;
+    overflow: hidden;
 }
 
 .add-building-button {
