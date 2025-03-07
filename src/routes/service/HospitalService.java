@@ -23,7 +23,7 @@ public class HospitalService {
 
     public List<Map<String, Object>> getHospitalsWithServices() {
             for(Hospital h : hospitals) {
-                h.simulateOneTick(1,new ArrivalScenario(hospitals))
+                h.simulateOneTick(new ArrivalScenario(hospitals))
             }
                 return hospitalService.getAllHospitals().stream()
                     .map(hospital -> Map.of(
