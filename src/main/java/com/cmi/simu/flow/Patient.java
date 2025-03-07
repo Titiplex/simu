@@ -1,6 +1,7 @@
 package com.cmi.simu.flow;
 
 import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Représente un patient, avec – * une priorité
@@ -9,7 +10,10 @@ import lombok.Getter;
 @Getter
 public class Patient {
     private final PriorityLevel priority;
+
+    @Setter
     private int timeToTreat;         // nombre d'itérations nécessaires
+
     private int timeSpentInService;  // combien de steps déjà passés dans le service
 
     public Patient(PriorityLevel priority, int timeToTreat) {
