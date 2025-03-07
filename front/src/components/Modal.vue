@@ -1,10 +1,10 @@
 <template>
     <div class="window">
+        <div class="window-header">
+            <h3>{{ building.id }}</h3>
+            <span class="close-button" v-on:click="close()">&#10005;</span>
+        </div>
         <div class="window-content">
-            <div class="window-header">
-                <h3>{{ building.id }}</h3>
-                <span class="close-button" v-on:click="close()">&#10005;</span>
-            </div>
             <div class="building-info">
                 <p>Capacité totale: {{ building.totalCapacity }}</p>
                 <p>Occupation: {{ building.occupation }}</p>
@@ -15,8 +15,12 @@
                 <h3>Services</h3>
                 <div v-for="service in building.services" :key="service.id" class="service">
                     <h4>{{ service.name }}</h4>
-                    <p>Capacité: {{ service.capacity }}</p>
-                    <p>Occupation: {{ service.occupation }}</p>
+                    <div>
+                        <p>Capacité: {{ service.occupation }} / {{ service.capacity }}</p>
+                        <button> {{ Math.pow(service.level, 1.5)*100 }} </button>
+                    </div>
+                    <p></p>
+                    <!-- <p>Occupation: {{ service.occupation }}</p> -->
                 </div>
             </div>
         </div>
@@ -42,7 +46,7 @@ export default {
 
 <style scoped>
 .window {
-    position: absolute;
+    position: fixed;
     bottom: 0;
     right: 0;
     width: 300px;
@@ -54,7 +58,6 @@ export default {
     overflow: hidden;
     z-index: 100;
     left: 0;
-    /* margin-bottom: -50vh; */
     transition: ease-in-out 0.7s;
 }
 .window.translate {
@@ -63,7 +66,8 @@ export default {
 
 .window .window-header {
     background-color: #f1f1f1;
-    /* padding: 10px; */
+    padding-left: 15px;
+    padding-right: 15px;
     border-bottom: 1px solid #ddd;
     display: flex;
     justify-content: space-between;
