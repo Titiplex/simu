@@ -3,8 +3,7 @@
         <!-- <Hospitals /> -->
         <MoneyBar :money="money" />
         <Map :money="money" @add-building="addBuilding" @open="openModal" />
-        <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital: {{ buildings.length == 0 ?
-            "100" : Math.floor(Math.pow(buildings.length, 1.5) * 100) }}</button>
+        <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital: {{   Math.floor(Math.pow(buildings.length, 2)*100) }}</button>
         <!-- <Building v-for="(building, index) in buildings" :key="index" :building="building" @open="openModal" /> -->
         <Modal v-if="isModalOpen" :building="selectedBuilding" @close="isModalOpen = false" />
     </div>
@@ -28,7 +27,7 @@ export default {
     },
     data() {
         return {
-            money: 1000, // Argent initial
+            money: 500, // Argent initial
             buildings: [], // Liste des bâtiments ajoutés
             isModalOpen: false,
             possiblePositions: [
@@ -58,7 +57,7 @@ export default {
         },
 
         addBuilding(building) {
-            const cost = Math.floor(Math.pow(this.buildings.length, 1.5) * 100);
+            const cost = Math.floor(Math.pow(this.buildings.length, 2)*100);
             if (this.money >= cost) {
                 const plot = document.getElementById(`city-${building.row}-${building.col}`);
                 if (plot) {
@@ -66,6 +65,7 @@ export default {
                     plot.dataset.buildingId = building.id; // Stocker l'ID du bâtiment
                     plot.classList.add('hospital');
                     this.buildings.push(building);
+                    console.log(cost);
                     this.money -= cost;
                 }
             } else {
@@ -84,8 +84,8 @@ export default {
 
         //CRÉER LES BUILDINDS AVEC LES SERVICES ASSOCIÉS
         handleAddBuilding() {
-            const cost = Math.floor(Math.pow(this.buildings.length, 1.5) * 100);
-            if (this.money < cost) {
+            const cost = Math.floor(Math.pow(this.buildings.length, 2)*100);
+            if(this.money < cost) {
                 alert("Pas assez d'argent !");
                 return;
             }
@@ -165,10 +165,6 @@ export default {
                 services
             };
 
-            // Ajouter le bâtiment à la liste des bâtiments
-            this.buildings.push(newBuilding);
-
-            // Appeler la méthode d'ajout avec le nouveau bâtiment
             this.addBuilding(newBuilding);
         },
         updateMoney() {
@@ -215,9 +211,5 @@ export default {
     border-radius: 5px;
     cursor: pointer;
     z-index: 100;
-}
-
-.add-building-button:hover {
-    background-color: darkgreen;
 }
 </style>
