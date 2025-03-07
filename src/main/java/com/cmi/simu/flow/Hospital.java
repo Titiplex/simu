@@ -2,9 +2,12 @@ package com.cmi.simu.flow;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Représente un hôpital, identifié par un ID et un nom.
@@ -24,33 +27,19 @@ public class Hospital {
     private final List<Hospital> neighbors;   // Autres hôpitaux connectés
 
     // Pour la simulation interne
-    @Setter
-    private FlowManager flowManager;
-    private FlowSimulator flowSimulator;
+    private final FlowManager flowManager;
+    private final FlowSimulator flowSimulator;
 
     /**
      * Constructeur
      */
-    public Hospital(int id, String name) {
+    public Hospital(int id, String name, FlowManager flowManager) {
         this.id = id;
         this.name = name;
-        this.units = new ArrayList<>();
+        this.units = getHospitalUnits();
         this.neighbors = new ArrayList<>();
         // Le flowManager et flowSimulator seront configurés plus tard
-    }
-
-    /**
-     * Ajoute un service hospitalier (HospitalUnit) à cet hôpital.
-     */
-    public void addUnit(HospitalUnit unit) {
-        this.units.add(unit);
-    }
-
-    /**
-     * Initialise/Met à jour le FlowSimulator pour cet hôpital
-     * en utilisant le flowManager courant.
-     */
-    public void initFlowSimulator() {
+        this.flowManager = flowManager;
         this.flowSimulator = new FlowSimulator(units, flowManager);
     }
 
@@ -68,17 +57,18 @@ public class Hospital {
      * puis tente d'éventuels transferts de patients vers les hôpitaux voisins.
      * On peut passer un scénario qui gère les arrivées pour cet hôpital.
      */
-    public void simulateOneStep(ArrivalScenario scenario) {
-        // 1) Gérer les arrivées extérieures (ex. scenario.updateArrivalsForHospital(this))
-        scenario.updateArrivalsForHospital(this);
+    public Map<String, Integer> simulateOneTick(int t, ArrivalScenario scenario) {
 
-        // 2) Simulation interne (flux local)
+        Map<String, Integer> sortis = new HashMap<>();
+        // Simulation interne (flux local)
         if (flowSimulator != null) {
-            flowSimulator.simulateOneStep();
+            sortis = flowSimulator.runOneStep(t, scenario, this.getUnits());
         }
 
         // 3) Tentative de débordement / transfert inter-hôpitaux
         doInterHospitalTransfers();
+
+        return sortis;
     }
 
     /**
@@ -104,8 +94,7 @@ public class Hospital {
                     if (canAccept > 0) {
                         int toTransfer = Math.min(surplus, canAccept);
                         // Transférer toTransfer patients (de plus basse priorité par ex.)
-                        unit.transferSomePatients(neighborUnit, toTransfer);
-                        surplus -= toTransfer;
+                        surplus -= unit.transferSomePatients(neighborUnit, toTransfer);
                         if (surplus <= 0) {
                             break; // plus de surplus
                         }
@@ -128,4 +117,37 @@ public class Hospital {
         return null;
     }
 
+    @NotNull
+    private static List<HospitalUnit> getHospitalUnits() {
+        HospitalUnit urgences  = new HospitalUnit("Urgences",  15, false, 10, 30, 0.0);
+        HospitalUnit chirurgie = new HospitalUnit("Chirurgie", 10, false, 8,  20, 0.1);
+        HospitalUnit medecine  = new HospitalUnit("Medecine",  8,  false, 5,  25, 0.05);
+        HospitalUnit bloc    = new HospitalUnit("Bloque",    1,  false,  2,  1,  0.001); // obstacle
+
+        // --- 2) Définir les voisinages (graphe) ---
+        // Admettons :
+        // Urgences <-> Chirurgie,
+        // Chirurgie <-> Medecine,
+        // Medecine <-> Reeducation,
+        // ZoneBloquee est un obstacle
+        urgences.addNeighbor(chirurgie);
+        urgences.addNeighbor(medecine);
+        chirurgie.addNeighbor(urgences);
+        chirurgie.addNeighbor(medecine);
+        medecine.addNeighbor(chirurgie);
+        medecine.addNeighbor(urgences);
+        chirurgie.addNeighbor(bloc);
+        urgences.addNeighbor(bloc);
+        bloc.addNeighbor(urgences);
+        bloc.addNeighbor(chirurgie);
+        // blocage n'a pas de voisins ou bien, on fait un blocage total
+
+        // --- 3) Préparer la liste globale ---
+        List<HospitalUnit> units = new ArrayList<>();
+        units.add(urgences);
+        units.add(chirurgie);
+        units.add(medecine);
+        units.add(bloc);
+        return units;
+    }
 }

@@ -1,82 +1,62 @@
 package com.cmi.simu.flow;
 
-import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class MainFlow {
 
     public static void main(String[] args) {
 
-        // --- 1) Création de quelques unités (services hospitaliers) ---
-        List<HospitalUnit> units = getHospitalUnits();
-
-        // --- 4) Créer le FlowManager (configurer k, k_lat, epsilon) ---
-        // k = 1.0 (flux gravitaire),
-        // k_lat = 0.3 (diffusion latérale plus lente),
-        // epsilon = 2.0
-        FlowManager flowManager = new FlowManager(1.0, 0.3, 2.0);
-
-        // --- 5) Créer le FlowSimulator ---
-        FlowSimulator simulator = new FlowSimulator(units, flowManager);
-
-        // --- 6) Gérer un scénario d'arrivées variables ---
-        ArrivalScenario scenario = new ArrivalScenario(units);
-
-        // --- 7) Lancer la simulation pas à pas, en mettant à jour les arrivées ---
         int totalSteps = 20;
+
+        List<Hospital> hospitalGraph = buildHospitalNetwork();
+        ArrivalScenario scenario = new ArrivalScenario(hospitalGraph);
+
         for (int t = 0; t < totalSteps; t++) {
-            // Met à jour externalArrivals dans chaque unité
-            // selon le scénario (ex. t=10 → afflux massif)
-            scenario.updateArrivals(t);
 
-            // Lance un pas de simulation
-            simulator.simulateOneStep();
-
+            System.out.println("*************************************************");
             // Affiche un petit résumé
             System.out.println("=== Time " + t + " ===");
-            int totalPatients = 0;
-            for (HospitalUnit u : units) {
-                int load = u.getCurrentLoad();
-                totalPatients += load;
-                System.out.printf("    %s: load=%.2f\n", u.getName(), (double) load);
+
+            for (Hospital hospital : hospitalGraph) {
+                hospital.simulateOneTick(t, scenario);
             }
-            System.out.println("   -> Total Patient = " + totalPatients);
+
+            // Logging
+            logHospitalState(hospitalGraph);
+
+            System.out.println("*************************************************");
         }
 
         System.out.println("Simulation terminee !");
     }
 
-    @NotNull
-    private static List<HospitalUnit> getHospitalUnits() {
-        HospitalUnit urgences   = new HospitalUnit("Urgences",     15.0, 0.05, 50.0, false);
-        HospitalUnit chirurgie  = new HospitalUnit("Chirurgie",    10.0, 0.02, 30.0, false);
-        HospitalUnit medecine   = new HospitalUnit("Medecine",      9.0, 0.01, 40.0, false);
-        HospitalUnit rehab      = new HospitalUnit("Reeducation",   5.0, 0.01, 20.0, false);
-        HospitalUnit blocage    = new HospitalUnit("ZoneBloquee",   0.0, 0.00,  0.0, true);
+    private static void logHospitalState(List<Hospital> hospitalGraph) {
+        for (Hospital hospital : hospitalGraph) {
+            System.out.println("Hospital " + hospital.getName() + " (ID=" + hospital.getId() + ") :");
+            int total = 0;
+            for (HospitalUnit unit : hospital.getUnits()) {
+                int load = unit.getPatients().size();
+                total += load;
+                System.out.println("  - " + unit.getName() + ": " + load + " patients");
+            }
+            System.out.println("  -> TOTAL in " + hospital.getName() + " = " + total);
+        }
+    }
 
-        // --- 2) Définir les voisinages (graphe) ---
-        // Admettons :
-        // Urgences <-> Chirurgie,
-        // Chirurgie <-> Medecine,
-        // Medecine <-> Reeducation,
-        // ZoneBloquee est un obstacle
-        urgences.addNeighbor(chirurgie);
-        chirurgie.addNeighbor(urgences);
-        chirurgie.addNeighbor(medecine);
-        medecine.addNeighbor(chirurgie);
-        medecine.addNeighbor(rehab);
-        rehab.addNeighbor(medecine);
-        // blocage n'a pas de voisins ou bien, on fait un blocage total
+    public static List<Hospital> buildHospitalNetwork() {
+        // FlowManager standard pour tout le monde
+        FlowManager fmA = new FlowManager(1.0, 0.3, 2.0);
+        FlowManager fmB = new FlowManager(1.0, 0.3, 2.0);
 
-        // --- 3) Préparer la liste globale ---
-        List<HospitalUnit> units = new ArrayList<>();
-        units.add(urgences);
-        units.add(chirurgie);
-        units.add(medecine);
-        units.add(rehab);
-        units.add(blocage);
-        return units;
+        // 1) Crée deux hôpitaux
+        Hospital hospitalA = new Hospital(1, "A", fmA);  // id=1
+        Hospital hospitalB = new Hospital(2, "B", fmB);  // id=2
+
+        // 2) Les relier en voisins
+        hospitalA.addNeighbor(hospitalB);
+        hospitalB.addNeighbor(hospitalA);
+
+        return Arrays.asList(hospitalA, hospitalB);
     }
 }

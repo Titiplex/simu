@@ -10,10 +10,10 @@ import java.util.List;
  */
 public class ArrivalScenario {
 
-    private final List<HospitalUnit> units;
+    private final List<Hospital> allHospitals;
 
-    public ArrivalScenario(List<HospitalUnit> units) {
-        this.units = units;
+    public ArrivalScenario(List<Hospital> hospitals) {
+        this.allHospitals = hospitals;
     }
 
     /**
@@ -23,31 +23,41 @@ public class ArrivalScenario {
      * un afflux ponctuel.
      */
     public void updateArrivals(int timeStep) {
-        // Réinitialiser ou calculer les arrivées pour chaque unité selon le timeStep
-        // Ex. si t = 10, un accident cause un afflux massif de 20 patients aux Urgences
-        for (HospitalUnit u : units) {
-            // Par défaut, 0
-            double arrivals = 0.0;
 
-            // Cas : "Urgences"
-            if (u.getName().equalsIgnoreCase("Urgences")) {
-                if (timeStep == 10) {
-                    arrivals = 20.0; // afflux massif
-                } else if (timeStep < 10) {
-                    arrivals = 3.0;  // afflux normal
-                } else {
-                    arrivals = 5.0;  // un peu plus tard
+        for (Hospital hospital : allHospitals) {
+            for (HospitalUnit unit : hospital.getUnits()) {
+                // Par défaut, 0
+                int urgentArr = 0;
+                int normalArr = 0;
+                int lowArr = 0;
+
+                // Ex : si ce sont les "Urgences", gros afflux à t=10
+                if (unit.getName().equalsIgnoreCase("Urgences")) {
+                    if (timeStep == 10) {
+                        urgentArr = 5;  // 5 patients URGENT
+                        normalArr = 10; // 10 patients normaux
+                        lowArr = 6;
+                    } else if (timeStep < 10) {
+                        urgentArr = 1;  // flux modéré
+                        normalArr = 2;
+                        lowArr = 3;
+                    } else {
+                        urgentArr = 2;
+                        normalArr = 3;
+                        lowArr = 3;
+                    }
                 }
+//            else {
+//                // Ex : flux stable ailleurs
+//                normalArr = 1;
+//                lowArr = 1;
+//            }
+
+                // On affecte
+                unit.setExternalArrivalsUrgent(urgentArr);
+                unit.setExternalArrivalsNormal(normalArr);
+                unit.setExternalArrivalsLow(lowArr);
             }
-
-            // Cas : "Consultations"
-            if (u.getName().equalsIgnoreCase("Consultations")) {
-                arrivals = 2.0; // flux stable
-            }
-
-            // On peut étendre le scénario selon d'autres services...
-
-            u.setExternalArrivals(arrivals);
         }
     }
 }
