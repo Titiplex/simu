@@ -3,14 +3,12 @@ package com.cmi.simu.flow;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Représente une unité hospitalière modélisée comme une "cellule"
  * dans l'analogie de l'écoulement. Chaque unité a – * altitude (H_i) *. Charge courante (W_i) *. Taux d'absorption (alpha_i) * . Statut "obstacle" ou non
- *   — liste de voisins pour calculer les flux
+ * — liste de voisins pour calculer les flux
  */
 @Getter
 public class HospitalUnit {
@@ -23,6 +21,9 @@ public class HospitalUnit {
     @Setter
     @Getter
     private double absorptionRate;  // alpha_i : fraction absorbée chaque pas de temps
+    @Setter
+    @Getter
+    private double mortalityRate = 0.02;  // 2% de chance de mourir chaque fois qu'on soigne un patient
     // Capacité du personnel : nbre max de patients traités par itération
     @Setter
     @Getter
@@ -45,7 +46,7 @@ public class HospitalUnit {
     private int externalArrivalsLow;
     /**
      * — GETTER —
-     *  Contrôle ou non le statut d'obstacle.
+     * Contrôle ou non le statut d'obstacle.
      */
     @Getter
     @Setter
@@ -57,7 +58,7 @@ public class HospitalUnit {
     // ----- GET / SET -----
     /**
      * — GETTER —
-     *  Retourne la liste des voisins (adjacents) de cette unité.
+     * Retourne la liste des voisins (adjacents) de cette unité.
      */
     // Liste des unités voisines (pour calculer flux entre elles)
     @Getter
@@ -65,8 +66,8 @@ public class HospitalUnit {
 
     /**
      * — GETTER —
-     *  Nombre de patients arrivant de l'extérieur ce pas de temps
-     *  (mis à jour par la logique d'événement).
+     * Nombre de patients arrivant de l'extérieur ce pas de temps
+     * (mis à jour par la logique d'événement).
      */
     // Pour gérer des arrivées extérieures variables
     // (On peut utiliser une fonction, un objet ou un simple paramètre qui évolue)
@@ -97,6 +98,7 @@ public class HospitalUnit {
 
     /**
      * Calcule la "hauteur totale" T_i(t) = H_i + W_i(t).
+     *
      * @return la hauteur totale
      */
     public double getTotalHeight() {
@@ -108,7 +110,7 @@ public class HospitalUnit {
      * (ou absorption, alpha_i).
      * <p>
      * Modélise la formule :
-     *   W_i(t+1) = W_i(t+1) * (1 - alpha_i)
+     * W_i(t+1) = W_i(t+1) * (1 - alpha_i)
      * si alpha_i > 0.
      */
     public int applyAbsorption() {
@@ -216,18 +218,17 @@ public class HospitalUnit {
                 acceptedCount++;
             } else {
                 // Service saturé → on peut imaginer un "débordement" vers un autre service
+                // Service saturé → on tente un débordement vers un voisin
+                if (tryOverflowToNeighbors(p)) {
+                    acceptedCount++;
+                }
+                // Si échec global, on peut imaginer un "patient perdu" ou en file d'attente globale
+                // Pour l’exemple, on ne fait rien de plus
             }
         }
 
         // 2) Patients NORMAL
-        for (int i = 0; i < externalArrivalsNormal; i++) {
-            Patient p = new Patient(PriorityLevel.NORMAL, randomTimeToTreat(PriorityLevel.NORMAL));
-            if (addPatient(p)) {
-                acceptedCount++;
-            } else {
-                // idem
-            }
-        }
+        acceptedCount = getAcceptedCount(acceptedCount, externalArrivalsNormal);
 
         // 3) Patients LOW
         for (int i = 0; i < externalArrivalsLow; i++) {
@@ -235,22 +236,18 @@ public class HospitalUnit {
             if (addPatient(p)) {
                 acceptedCount++;
             } else {
-                // idem
+                if (tryOverflowToNeighbors(p)) {
+                    acceptedCount++;
+                }
+                // Si échec global, on peut imaginer un "patient perdu" ou en file d'attente globale
+                // Pour l’exemple, on ne fait rien de plus
             }
         }
 
         // 4) Si on souhaite aussi gérer externalArrivals "global" (sans priorité),
         //    on peut le faire ici :
         int genericCount = (int) Math.floor(externalArrivals);
-        for (int i = 0; i < genericCount; i++) {
-            // Par exemple, on crée un patient NORMAL par défaut
-            Patient p = new Patient(PriorityLevel.NORMAL, randomTimeToTreat(PriorityLevel.NORMAL));
-            if (addPatient(p)) {
-                acceptedCount++;
-            } else {
-                // saturé
-            }
-        }
+        acceptedCount = getAcceptedCount(acceptedCount, genericCount);
 
         // Remettre à zéro pour la prochaine itération
         this.externalArrivalsUrgent = 0;
@@ -258,6 +255,23 @@ public class HospitalUnit {
         this.externalArrivalsLow = 0;
         this.externalArrivals = 0.0;
 
+        return acceptedCount;
+    }
+
+    private int getAcceptedCount(int acceptedCount, int genericCount) {
+        for (int i = 0; i < genericCount; i++) {
+            // Par exemple, on crée un patient NORMAL par défaut
+            Patient p = new Patient(PriorityLevel.NORMAL, randomTimeToTreat(PriorityLevel.NORMAL));
+            if (addPatient(p)) {
+                acceptedCount++;
+            } else {
+                if (tryOverflowToNeighbors(p)) {
+                    acceptedCount++;
+                }
+                // Si échec global, on peut imaginer un "patient perdu" ou en file d'attente globale
+                // Pour l’exemple, on ne fait rien de plus
+            }
+        }
         return acceptedCount;
     }
 
@@ -296,5 +310,105 @@ public class HospitalUnit {
         // MAJ
         currentLoad = patients.size();
         return transferred;
+    }
+
+    /**
+     * Tente d'ajouter le patient P à l'un des voisins si le service actuel est saturé.
+     * Retourne true si le patient a pu être placé chez un voisin, false sinon.
+     */
+    private boolean tryOverflowToNeighbors(Patient p) {
+        // On pourrait faire un tri des voisins selon la hauteur, la distance, ou d'autres critères
+        for (HospitalUnit neighbor : neighbors) {
+            // Vérification basique : pas un obstacle, pas saturé
+            if (!neighbor.isObstacle()) {
+                if (neighbor.addPatient(p)) {
+                    return true;
+                }
+            }
+        }
+        // Si aucun voisin n'a pu accueillir le patient
+        return false;
+    }
+
+    /**
+     * Méthode principale pour la logique "capacité du personnel" :
+     * On traite (décrémente timeToTreat) jusqu'à 'staffCapacity' patients
+     * lors de ce tick. Les autres ne sont pas soignés ce tour-ci.
+     * <p>
+     * On peut décider de prioriser l'URGENT, puis NORMAL, ensuite LOW.
+     */
+    public int treatPatientsOneStep() {
+
+        int totalStaffCapacity = staffCapacity + suppStaffForHour();
+
+        if (patients.isEmpty() || totalStaffCapacity <= 0) return 0;
+
+        // 1) Tri par priorité (URGENT d'abord, puis NORMAL, ensuite LOW)
+        //    → On veut soigner en priorité les urgences
+        List<Patient> sorted = new ArrayList<>(patients);
+        sorted.sort(Comparator.comparing(Patient::getPriority));
+        // Rappel : par défaut, "URGENT" < "NORMAL" < "LOW" dans l'ordre alphabétique,
+        //          donc on priorise URGENT d'abord.
+
+        // 2) On traite (décrémente timeToTreat) jusqu'à staffCapacity patients
+        int treatable = Math.min(totalStaffCapacity, sorted.size());
+        int effectivelyTreatedOrRemoved = 0;
+
+        for (int i = 0; i < treatable; i++) {
+            Patient p = sorted.get(i);
+
+            // on traite la mortalité
+            double r = Math.random();
+            if (r <= mortalityRate) {
+                p.setTimeToTreat(-999);
+            } else {
+                // On décrémente timeToTreat
+                p.decreaseTimeToTreat();
+                // On incrémente le temps passé
+                p.incrementTimeInService();
+            }
+
+            effectivelyTreatedOrRemoved++;
+        }
+
+        // 3) Retirer du service ceux dont timeToTreat ← 0 (ils sortent du système)
+        //    Il faut le faire depuis la liste 'patients' d'origine
+        // patients.removeIf(p -> p.getTimeToTreat() <= 0);
+
+        // vérifier si éligible à la sortie
+        Iterator<Patient> it = patients.iterator();
+        while (it.hasNext()) {
+            Patient p = it.next();
+            // Condition de sortie : timeToTreat <= 0 ET a passé minStayInUnit
+            if (p.getTimeToTreat() <= 0 && p.getTimeSpentInService() >= p.getMinStayInUnit()) {
+                it.remove();
+                effectivelyTreatedOrRemoved++;
+            }
+        }
+
+        // 4) MAJ currentLoad
+        currentLoad = patients.size();
+
+        return effectivelyTreatedOrRemoved;
+    }
+
+    private int suppStaffForHour() {
+        int hour = Clock.getTime();
+
+        if (hour < 6) return getRandomInRange(1, 2);
+        else if (hour < 12) return getRandomInRange(1, 3);
+        else if (hour < 21) return getRandomInRange(2, 6);
+        return getRandomInRange(2, 4);
+    }
+
+    /**
+     * Retourne un entier aléatoire compris entre min et max inclus
+     */
+    private int getRandomInRange(int min, int max) {
+        Random rand = new Random();
+        if (min > max) {
+            return min;
+        }
+        return rand.nextInt(max - min + 1) + min;
     }
 }

@@ -19,13 +19,15 @@ public class MainFlow {
             System.out.println("=== Time " + t + " ===");
 
             for (Hospital hospital : hospitalGraph) {
-                hospital.simulateOneTick(t, scenario);
+                System.out.println("Sorties : " + hospital.simulateOneTick(scenario));
             }
 
             // Logging
             logHospitalState(hospitalGraph);
 
             System.out.println("*************************************************");
+
+            Clock.addOneHour();
         }
 
         System.out.println("Simulation terminee !");
@@ -46,7 +48,7 @@ public class MainFlow {
 
     public static List<Hospital> buildHospitalNetwork() {
         // FlowManager standard pour tout le monde
-        FlowManager fmA = new FlowManager(1.0, 0.3, 2.0);
+        FlowManager fmA = new FlowManager(22.0, 4.4, 3.0);
         FlowManager fmB = new FlowManager(1.0, 0.3, 2.0);
 
         // 1) Crée deux hôpitaux

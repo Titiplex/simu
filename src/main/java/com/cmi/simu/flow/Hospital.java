@@ -56,12 +56,12 @@ public class Hospital {
      * puis tente d'éventuels transferts de patients vers les hôpitaux voisins.
      * On peut passer un scénario qui gère les arrivées pour cet hôpital.
      */
-    public Map<String, Integer> simulateOneTick(int t, ArrivalScenario scenario) {
+    public Map<String, Integer> simulateOneTick(ArrivalScenario scenario) {
 
         Map<String, Integer> sortis = new HashMap<>();
         // Simulation interne (flux local)
         if (flowSimulator != null) {
-            sortis = flowSimulator.runOneStep(t, scenario, this.getUnits());
+            sortis = flowSimulator.runOneStep(scenario, this.getUnits());
         }
 
         // 3) Tentative de débordement / transfert inter-hôpitaux

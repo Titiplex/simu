@@ -2,6 +2,7 @@ package routes.service;
 
 import com.cmi.simu.flow.HospitalUnit;
 import com.cmi.simu.flow.Hospital;
+import com.cmi.simu.flow.ArrivalScenario;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,8 +19,38 @@ public class HospitalService {
     }
 
     public List<Hospital> getAllHospitals() {
-        return hospitals;
+        return hospitals;}
+
+    public List<Map<String, Object>> getHospitalsWithServices() {
+            for(Hospital h : hospitals) {
+                h.simulateOneTick(new ArrivalScenario(hospitals))
+            }
+                return hospitalService.getAllHospitals().stream()
+                    .map(hospital -> Map.of(
+                            "id", hospital.getId(),
+                            "name", hospital.getName(),
+                            "services", hospital.getServices().stream()
+                                    .map(this::convertObjectToMap)  // 🔥 Conversion automatique !
+                                    .collect(Collectors.toList())
+                    ))
+                    .collect(Collectors.toList());
     }
+
+    private Map<String, Object> convertObjectToMap(Object obj) {
+        Map<String, Object> map = new HashMap<>();
+        try {
+            for (Field field : obj.getClass().getDeclaredFields()) {
+                field.setAccessible(true);  // Permet d'accéder aux attributs privés
+                map.put(field.getName(), field.get(obj));
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return map;
+    }
+
+
+
 
     // Modification pour retourner les services avec la capacité maximale et occupée
     public List<Map<String, Object>> getHospitalServices(Long id) {
@@ -45,6 +76,10 @@ public class HospitalService {
     public Hospital createHospital(Hospital hospital) {
         hospital.setId(nextId++);
         hospitals.add(hospital);
+        for(Hospital h : hospitals) {
+            h.addNeighbor(hospital);
+            hospital.addNeighbor(h);
+        }
         return hospital;
     }
 

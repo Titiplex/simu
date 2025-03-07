@@ -44,19 +44,22 @@ public class FlowSimulator {
 
         // 2) Mettre à jour le temps de traitement / sortie définitive
         for (HospitalUnit unit : units) {
-            Iterator<Patient> it = unit.getPatients().iterator();
-            while (it.hasNext()) {
-                Patient p = it.next();
-                // On incrémente le temps passé
-                p.incrementTimeInService();
-                // On décrémente la durée de traitement
-                p.decreaseTimeToTreat();
-                // Si le patient a fini son traitement, il sort du système
-                if (p.getTimeToTreat() <= 0) {
-                    it.remove();
-                    sortis.merge(unit.getName(), 1, Integer::sum);
-                }
-            }
+//            Iterator<Patient> it = unit.getPatients().iterator();
+//            while (it.hasNext()) {
+//                Patient p = it.next();
+//                // On incrémente le temps passé
+//                p.incrementTimeInService();
+//                // On décrémente la durée de traitement
+//                p.decreaseTimeToTreat();
+//                // Si le patient a fini son traitement, il sort du système
+//                if (p.getTimeToTreat() <= 0) {
+//                    it.remove();
+//                    sortis.merge(unit.getName(), 1, Integer::sum);
+//                }
+//            }
+
+            int outDueToTreatment = unit.treatPatientsOneStep();
+            sortis.merge(unit.getName(), outDueToTreatment, Integer::sum);
         }
 
         // 3) Calculer les flux potentiels
@@ -64,10 +67,9 @@ public class FlowSimulator {
         Map<String, List<Patient>> transferMap = new HashMap<>();
 
         for (HospitalUnit i : units) {
-            if (i.isObstacle()) continue;
+            if (i.isObstacle() || i.getPatients().isEmpty()) continue;
 
             int totalPatients = i.getPatients().size();
-            if (totalPatients == 0) continue;
 
             // On calcule la somme des flux potentiels vers chaque voisin
             double totalFluxSum = 0.0;
@@ -112,10 +114,19 @@ public class FlowSimulator {
 
                 // On prend nbTransfer patients depuis la fin (lowest priority) ou le début (highest) 
                 // selon la politique. Mettons qu'on transfère d'abord la "faible" priorité.
-                for (int c = 0; c < nbTransfer && !sortedPatients.isEmpty(); c++) {
-                    // On prend le dernier (faible prio).
-                    Patient p = sortedPatients.removeLast();
-                    subListToTransfer.add(p);
+                for (int c = 0; c < nbTransfer && !sortedPatients.isEmpty();) {
+                    Patient p = sortedPatients.getLast();
+
+                    // Vérification du temps minimal avant transfert
+                    if (p.getTimeBeforeEligibleTransfer() <= 0) {
+                        // On prend le dernier (faible prio).
+                        sortedPatients.remove(p);
+                        subListToTransfer.add(p);
+                        c++;
+                    } else {
+                        // Le patient n'est pas encore éligible, on le retire du tri pour éviter de le rechoisir
+                        sortedPatients.remove(p);
+                    }
                 }
 
                 // Stockage dans transferMap
@@ -170,11 +181,11 @@ public class FlowSimulator {
     /**
      * Lance la simulation sur nbSteps étapes.
      */
-    public Map<String, Integer> runOneStep(int t, ArrivalScenario scenario, List<HospitalUnit> units) {
+    public Map<String, Integer> runOneStep(ArrivalScenario scenario, List<HospitalUnit> units) {
 
         // Met à jour externalArrivals dans chaque unité
         // selon le scénario (ex. t=10 → afflux massif)
-        scenario.updateArrivals(t);
+        scenario.updateArrivals();
 
         Map<String, Integer> sortis = simulateOneStep();
 

@@ -2,6 +2,8 @@ package routes.controller;
 
 
 import com.cmi.simu.flow.Hospital;
+import com.cmi.simu.flow.Clock;
+import com.cmi.simu.flow.ArrivalScenario;
 import service.HospitalService;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,15 +25,20 @@ public class HospitalController {
     }
 
     @GetMapping
-    public List<Hospital> getAllHospitals() {
-        return hospitalService.getAllHospitals();
+    public List<Map<String, Object>> getAllHospitals(){
+
+        Clock.addOneHour();
+        return hospitalService.getHospitalsWithServices()
     }
+
 
     // Route pour récupérer les services d'un hôpital spécifique avec capacité
     @GetMapping("/{id}/services")
     public List<Map<String, Object>> getHospitalServices(@PathVariable Long id) {
         return hospitalService.getHospitalServices(id);
     }
+
+
 
     @PostMapping
     public Hospital createHospital(@RequestBody Hospital hospital) {
