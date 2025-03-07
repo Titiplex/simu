@@ -2,6 +2,7 @@ package routes.controller;
 
 
 import com.cmi.simu.flow.Hospital;
+import com.cmi.simu.flow.Clock;
 import com.cmi.simu.flow.ArrivalScenario;
 import service.HospitalService;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +26,8 @@ public class HospitalController {
 
     @GetMapping
     public List<Map<String, Object>> getAllHospitals(){
+
+        Clock.addOneHour();
         return hospitalService.getHospitalsWithServices()
     }
 
