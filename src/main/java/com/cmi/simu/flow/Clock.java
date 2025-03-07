@@ -11,6 +11,7 @@ public class Clock {
 
     public static void addOneHour() {
         time = (time+1) % 24;
+        System.out.println(time);
     }
 
 }
