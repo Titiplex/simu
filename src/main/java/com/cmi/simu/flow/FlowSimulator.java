@@ -114,10 +114,19 @@ public class FlowSimulator {
 
                 // On prend nbTransfer patients depuis la fin (lowest priority) ou le début (highest) 
                 // selon la politique. Mettons qu'on transfère d'abord la "faible" priorité.
-                for (int c = 0; c < nbTransfer && !sortedPatients.isEmpty(); c++) {
-                    // On prend le dernier (faible prio).
-                    Patient p = sortedPatients.removeLast();
-                    subListToTransfer.add(p);
+                for (int c = 0; c < nbTransfer && !sortedPatients.isEmpty();) {
+                    Patient p = sortedPatients.getLast();
+
+                    // Vérification du temps minimal avant transfert
+                    if (p.getTimeBeforeEligibleTransfer() <= 0) {
+                        // On prend le dernier (faible prio).
+                        sortedPatients.remove(p);
+                        subListToTransfer.add(p);
+                        c++;
+                    } else {
+                        // Le patient n'est pas encore éligible, on le retire du tri pour éviter de le rechoisir
+                        sortedPatients.remove(p);
+                    }
                 }
 
                 // Stockage dans transferMap
