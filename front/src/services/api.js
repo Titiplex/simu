@@ -22,4 +22,13 @@ export default {
             console.error('Erreur lors de l’ajout du bâtiment:', error);
         }
     },
+
+    async updateMaxCapacity(building.id, building.maxCapacity, building.services.nom) {
+    try {
+        const response = await axios.post(`${API_URL}/hospitals/${building}/services`);
+        return response.data;
+    } catch (error) {
+        console.error('Erreur lors de envoi du bâtiment:', error);
+    }
+},
 };
