@@ -6,16 +6,15 @@
         </div>
         <div class="window-content">
             <div class="building-info">
-                <p>Capacité totale: {{ building.totalCapacity }}</p>
-                <p>Occupation: {{ building.occupation }}</p>
-                <p>Revenus par seconde: {{ building.earningPerSecond }}$</p>
-                <p>Pertes par seconde: {{ building.lossPerSecond }}$</p>
+                <p><i class="fas fa-hospital"></i> Capacité totale: {{ building.occupation }} / {{ building.capacity }}</p>
+                <p><i class="fas fa-dollar-sign"></i> Revenus par seconde: {{ building.earningPerSecond }}$</p>
+                <p><i class="fas fa-money-bill-wave"></i> Pertes par seconde: {{ building.lossPerSecond }}$</p>
             </div>
             <div class="services-info">
                 <h3>Services</h3>
                 <div v-for="service in building.services" :key="service.id" class="service">
                     <h4>{{ service.name }}</h4>
-                    <div>
+                    <div class="service-attribut">
                         <p>Capacité: {{ service.occupation }} / {{ service.capacity }}</p>
                         <button> {{ Math.pow(service.level, 1.5)*100 }} </button>
                     </div>
@@ -45,6 +44,8 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
 .window {
     position: fixed;
     bottom: 0;
@@ -53,7 +54,7 @@ export default {
     height: 400px;
     background-color: white;
     border: 1px solid #ddd;
-    border-radius: 8px 8px 0 0;
+    border-radius: 15px 15px 0 0;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     z-index: 100;
@@ -94,10 +95,34 @@ export default {
     margin: 15px 0;
 }
 
+.building-info p {
+    display: flex;
+    align-items: center;
+}
+
+.building-info i {
+    margin-right: 8px;
+    width: 20px;
+    text-align: center;
+}
+
 .service {
     border: 1px solid #ddd;
     padding: 10px;
     margin: 10px 0;
     border-radius: 4px;
+}
+.service-attribut {
+    display: flex;
+    justify-content: space-between;
+}
+.service button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    padding: 0px 10px;
+    cursor: pointer;
 }
 </style>
