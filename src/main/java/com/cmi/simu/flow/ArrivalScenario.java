@@ -4,123 +4,100 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Gère la logique d'arrivées extérieures aléatoires et ponctuellement massives (événements graves).
- *
- * - Pas de timeStep en paramètre. Chaque appel à updateArrivals() correspond à "une itération"
- *   ou "un certain instant" dans la simulation.
- * - L'enchaînement normal vs. événement est géré par un état interne (inEvent, countdownToNextEvent, eventDuration).
+ * Gère la logique d'arrivées extérieures, incluant des événements (catastrophes) aléatoires.
  */
 public class ArrivalScenario {
 
     private final List<Hospital> allHospitals;
     private final Random rand;
 
-    // -- État interne pour générer les événements aléatoires --
-    private boolean inEvent;               // Sommes-nous dans un événement grave ?
-    private int eventDuration;            // Combien "d'itérations" restantes pour l'événement
-    private int countdownToNextEvent;     // Dans combien d'itérations arrive le prochain événement ?
+    // État interne
+    private boolean inEvent;
+    private int eventDuration;
+    private int countdownToNextEvent;
 
-    // Paramètres pour limiter la génération aléatoire
-    // (on peut ajuster ces valeurs pour calibrer la fréquence et l'impact)
-    private final int minTimeBetweenEvents = 7;  // minimum d'itérations entre deux événements
-    private final int maxTimeBetweenEvents = 30;  // maximum d'itérations entre deux événements
+    // Réduire pour voir des événements plus souvent :
+    private final int minTimeBetweenEvents = 2;  // ex. 2
+    private final int maxTimeBetweenEvents = 5;  // ex. 5
 
     public ArrivalScenario(List<Hospital> hospitals) {
         this.allHospitals = hospitals;
         this.rand = new Random();
 
         this.inEvent = false;
+        // Durée initiale d’un événement inexistant
         this.eventDuration = 0;
-        // On déclenche d'abord un compte à rebours aléatoire avant le premier événement
+        // On commence avec un compte à rebours aléatoire
         this.countdownToNextEvent = getRandomInRange(minTimeBetweenEvents, maxTimeBetweenEvents);
     }
 
     /**
-     * Fonction principale qui génère les arrivées pour tous les hôpitaux
-     * à chaque appel. Elle ne prend plus de timeStep, car on gère un flux
-     * entièrement aléatoire (avec parfois des événements).
+     * Méthode principale, appelée à chaque "tick" (chaque fois qu'on veut avancer la simulation).
      */
     public void updateArrivals() {
-        // 1) Vérifier si on est en événement
         if (inEvent) {
-            // on décrémente la durée
+            // On est déjà en événement
             eventDuration--;
             if (eventDuration <= 0) {
-                // fin de l'événement
                 inEvent = false;
-                // on recalcule un nouveau countdown avant le prochain événement
+                System.out.println("** L'evenement s'acheve. Activite normale. **");
                 countdownToNextEvent = getRandomInRange(minTimeBetweenEvents, maxTimeBetweenEvents);
             }
         } else {
-            // pas d'événement → flux normal,
-            // on décrémente le compte à rebours
+            // Pas d’événement => décompte avant le prochain
             countdownToNextEvent--;
             if (countdownToNextEvent <= 0) {
-                // on déclenche un nouvel événement
                 inEvent = true;
-                // durée max d'un événement
-                int maxEventDuration = 3;
-                // durée min d'un événement
-                int minEventDuration = 1;
-                eventDuration = getRandomInRange(minEventDuration, maxEventDuration);
+                eventDuration = getRandomInRange(1, 3);
+                System.out.println("** Un événement grave démarre pour " + eventDuration + " iteration(s) ! **");
             }
         }
 
-        // 2) Générer des arrivées en fonction de l'État (inEvent ou non)
+        // Générer les arrivées dans chaque hôpital, en fonction de inEvent
         for (Hospital hospital : allHospitals) {
             for (HospitalUnit unit : hospital.getUnits()) {
-
-                // On calcule un triple (urgentArr, normalArr, lowArr) aléatoire
-                // dépendant de si on est dans un événement ou non.
                 int urgentArr = 0, normalArr = 0, lowArr = 0;
 
                 if (inEvent) {
-                    // Événement grave : flux plus élevé, plus de patients urgents
-                    // Par exemple, urgences reçoivent un plus gros choc
-                    // On peut affiner si unit.getName().equalsIgnoreCase("Urgences")
-
+                    // On augmente le flux, surtout en urgences
                     if (unit.getName().equalsIgnoreCase("Urgences")) {
-                        // Événement + Urgences → gros afflux
-                        urgentArr  = getRandomInRange(4, 8);
-                        normalArr  = getRandomInRange(4, 11);
-                        lowArr     = getRandomInRange(2, 6);
+                        System.out.println("Is Event for URGENCES");
+                        urgentArr = getRandomInRange(3, 8);
+                        normalArr = getRandomInRange(4, 10);
+                        lowArr    = getRandomInRange(2, 5);
+                    } else {
+                        urgentArr = getRandomInRange(1, 3);
+                        normalArr = getRandomInRange(1, 5);
+                        lowArr    = getRandomInRange(0, 4);
                     }
-//                    else {
-//                        // Événement, mais pas urgences → afflux un peu moindre
-//                        urgentArr  = getRandomInRange(1, 4);
-//                        normalArr  = getRandomInRange(3, 7);
-//                        lowArr     = getRandomInRange(2, 5);
-//                    }
-
                 } else {
-                    // Situation normale : flux plus modéré
+                    // Activité normale. On gère un mode jour/nuit par Clock
                     if (isNight()) {
                         if (unit.getName().equalsIgnoreCase("Urgences")) {
+                            System.out.println("Night - URGENCES");
                             urgentArr = getRandomInRange(0, 2);
+                            normalArr = getRandomInRange(0, 2);
+                            lowArr    = getRandomInRange(0, 1);
+                        } else {
+                            urgentArr = getRandomInRange(0, 1);
+                            normalArr = getRandomInRange(0, 2);
+                            lowArr    = getRandomInRange(0, 1);
+                        }
+                    } else {
+                        // Jour
+                        if (unit.getName().equalsIgnoreCase("Urgences")) {
+                            System.out.println("Day - URGENCES");
+                            urgentArr = getRandomInRange(0, 2);
+                            normalArr = getRandomInRange(2, 4);
+                            lowArr    = getRandomInRange(1, 3);
+                        } else {
+                            urgentArr = getRandomInRange(0, 1);
                             normalArr = getRandomInRange(1, 3);
                             lowArr    = getRandomInRange(0, 2);
                         }
-//                        else {
-//                            urgent = randomInRange(0, 1);
-//                            normal = randomInRange(0, 2);
-//                            low    = randomInRange(0, 1);
-//                        }
-                    } else {
-                        if (unit.getName().equalsIgnoreCase("Urgences")) {
-                            urgentArr  = getRandomInRange(0, 2);
-                            normalArr  = getRandomInRange(2, 4);
-                            lowArr     = getRandomInRange(1, 3);
-                        }
-//                    else {
-//                        // services classiques
-//                        urgentArr  = getRandomInRange(0, 1);
-//                        normalArr  = getRandomInRange(1, 4);
-//                        lowArr     = getRandomInRange(0, 2);
-//                    }
                     }
                 }
 
-                // On affecte ces arrivées au service
                 unit.setExternalArrivalsUrgent(urgentArr);
                 unit.setExternalArrivalsNormal(normalArr);
                 unit.setExternalArrivalsLow(lowArr);
@@ -128,11 +105,6 @@ public class ArrivalScenario {
         }
     }
 
-    // -- Outils privés --
-
-    /**
-     * Retourne un entier aléatoire compris entre min et max inclus
-     */
     private int getRandomInRange(int min, int max) {
         if (min > max) {
             return min;
@@ -141,6 +113,8 @@ public class ArrivalScenario {
     }
 
     private boolean isNight() {
-        return Clock.getTime() < 6 || Clock.getTime() > 22;
+        // Suppose qu'on est la nuit entre 22h et 5h
+        int hour = Clock.getTime();
+        return hour >= 22 || hour < 6;
     }
 }

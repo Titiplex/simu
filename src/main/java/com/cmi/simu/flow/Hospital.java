@@ -1,5 +1,7 @@
 package com.cmi.simu.flow;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import lombok.Getter;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
@@ -21,9 +23,10 @@ public class Hospital {
 
     @Getter @Setter
     private int id;               // Identifiant unique (ex. pour requête POST)
-    private final String name;           // Nom de l'hôpital
+    private String name;           // Nom de l'hôpital
 
     private final List<HospitalUnit> units;   // Services internes
+    @JsonIgnore
     private final List<Hospital> neighbors;   // Autres hôpitaux connectés
 
     // Pour la simulation interne
@@ -41,6 +44,15 @@ public class Hospital {
         // Le flowManager et flowSimulator seront configurés plus tard
         this.flowManager = flowManager;
         this.flowSimulator = new FlowSimulator(units, flowManager);
+    }
+
+    public Hospital() {
+        this.units = getHospitalUnits();
+        this.neighbors = new ArrayList<>();
+        // Le flowManager et flowSimulator seront configurés plus tard
+        this.flowManager = new FlowManager(1.0,0.3,2.0);
+        this.flowSimulator = new FlowSimulator(units, flowManager);
+        this.name = "";
     }
 
     /**

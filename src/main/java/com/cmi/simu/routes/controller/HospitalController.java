@@ -1,17 +1,24 @@
 package com.cmi.simu.routes.controller;
 
 
+import com.cmi.simu.flow.ArrivalScenario;
 import com.cmi.simu.flow.Clock;
 import com.cmi.simu.flow.Hospital;
+import com.cmi.simu.routes.records.HospitalDTO;
+import com.cmi.simu.routes.records.ServiceDTO;
 import com.cmi.simu.routes.service.HospitalService;
 import org.springframework.web.bind.annotation.*;
+
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api/hospitals") // URL de base
-@CrossOrigin(origins = "http://localhost:5173") // Autorise Vue.js en dev
+@CrossOrigin(origins = "*") // Autorise Vue.js en dev
 
 public class HospitalController {
 
@@ -22,8 +29,8 @@ public class HospitalController {
         HospitalController.hospitalService = hospitalService;
     }
 
-    @GetMapping
-    public static List<Map<String, Object>> getAllHospitals() {
+    @GetMapping("/hospitals")
+    public static List<HospitalDTO> getAllHospitals() {
 
         Clock.addOneHour();
         return hospitalService.getHospitalsWithServices();
@@ -32,7 +39,7 @@ public class HospitalController {
 
     // Route pour récupérer les services d'un hôpital spécifique avec capacité
     @GetMapping("/{id}/services")
-    public List<Map<String, Object>> getHospitalServices(@PathVariable Long id) {
+    public List<ServiceDTO> getHospitalServices(@PathVariable Long id) {
         return hospitalService.getHospitalServices(id);
     }
 
@@ -47,6 +54,12 @@ public class HospitalController {
         boolean deleted = hospitalService.deleteHospital(id);
         return deleted ? "Hôpital supprimé" : "Hôpital non trouvé";
     }
+
+    @DeleteMapping("/hospitals")
+    public void deleteAllHospitals() {
+        hospitalService.deleteAllHospitals(); // Supprime tous les hôpitaux
+            }
+
 
     @PostMapping("/{id}/services")
     public void addMaxCapacity(@PathVariable Long id,

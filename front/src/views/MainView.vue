@@ -6,14 +6,15 @@
         <!-- <Building v-for="(building, index) in buildings" :key="index" :building="building" @open="openModal" /> -->
         <Modal v-if="isModalOpen" :building="selectedBuilding" @close="isModalOpen = false" />
     </div>
-
 </template>
 
 <script>
+import axios from 'axios';
 import MoneyBar from '@/components/MoneyBar.vue';
 import Map from '@/components/Map.vue';
 import Building from '@/components/Building.vue';
 import Modal from '@/components/Modal.vue';
+import api from '@/services/api';
 
 export default {
     name: 'MainView',
@@ -22,6 +23,12 @@ export default {
         Map,
         Building,
         Modal,
+    },
+    props: {
+        buildings: {
+            type: Array,
+            required: true
+        }
     },
     data() {
         return {
@@ -42,11 +49,14 @@ export default {
         };
     },
     methods: {
+        updateBuildings(updatedBuildings) {
+            this.buildings = updatedBuildings;
+        },
         openModal(element) {
             // Récupérer l'ID du bâtiment depuis l'élément
             const buildingId = element.dataset.buildingId;
             // Trouver le bâtiment correspondant dans la liste
-            const building = this.buildings.find(b => b.id === buildingId);
+            const building = this.buildings.find(b => b.id == buildingId);
 
             if (building) {
                 this.selectedBuilding = building;
@@ -54,7 +64,7 @@ export default {
             }
         },
 
-        addBuilding(building) {
+        async addBuilding(building) {
             const cost = Math.floor(Math.pow(this.buildings.length, 4)*100);
             if (this.money >= cost) {
                 const plot = document.getElementById(`city-${building.row}-${building.col}`);
@@ -62,9 +72,18 @@ export default {
                     plot.src = building.imageUrl;
                     plot.dataset.buildingId = building.id; // Stocker l'ID du bâtiment
                     plot.classList.add('hospital');
-                    this.buildings.push(building);
-                    console.log(cost);
-                    this.money -= cost;
+
+                    try {
+                        // Appel API pour ajouter le bâtiment
+                        await this.addBuildingToAPI(building);
+
+                        // Ajout du bâtiment localement si l'API a réussi
+                        this.buildings.push(building);
+                        console.log('Bâtiment ajouté via l\'API:', building);
+                        this.money -= cost;
+                    } catch (error) {
+                        console.error('Erreur lors de l\'ajout du bâtiment via l\'API:', error);
+                    }
                 }
             } else {
                 alert("Pas assez d'argent !");
@@ -96,7 +115,7 @@ export default {
 
             let services = [
                 {
-                    name: 'Service 1',
+                    name: 'Chirurgie',
                     level: 1,
                     capacity: 50,
                     occupation: 0,
@@ -106,7 +125,7 @@ export default {
                     totalHealed: 0
                 },
                 {
-                    name: 'Service 2',
+                    name: 'Bloque',
                     level: 1,
                     capacity: 30,
                     occupation: 2,
@@ -116,7 +135,7 @@ export default {
                     totalHealed: 0
                 },
                 {
-                    name: 'Service 3',
+                    name: 'Urgences',
                     level: 1,
                     capacity: 20,
                     occupation: 10,
@@ -126,7 +145,7 @@ export default {
                     totalHealed: 0
                 },
                 {
-                    name: 'Service 4',
+                    name: 'Medecine',
                     level: 1,
                     capacity: 10,
                     occupation: 0,
@@ -139,7 +158,7 @@ export default {
 
             ];
 
-            const buildingId = `Hôpital${this.buildings.length + 1}`;
+            const buildingId = this.buildings.length + 1;
             services.forEach(service => service.buildingId = buildingId);
 
             const totalCapacity = services.reduce((sum, s) => sum + s.capacity, 0);
@@ -194,15 +213,57 @@ export default {
 
             // Mettre à jour l'argent en fonction des gains et pertes
             this.money += totalEarnings - totalLosses;
+        },
+
+        async fetchAndUpdateHospitals() {
+            try {
+                const hospitals = await api.fetchHospitals();
+                this.buildings = hospitals.map(hospital => ({
+                    id: hospital.id,
+                    level: 1,
+                    capacity: hospital.services.reduce((sum, s) => sum + s.maxCapacity, 0),
+                    occupation: hospital.services.reduce((sum, s) => sum + s.occupiedCapacity, 0),
+                    services: hospital.services.map(service => ({
+                        name: service.name,
+                        level: 1,
+                        capacity: service.maxCapacity,
+                        occupation: service.occupiedCapacity,
+                        earningPerHealed: 3,
+                        lossPerSecond: 2,
+                        totalDeaths: 0,
+                        totalHealed: 0
+                    })),
+                    earningPerSecond: 0,
+                    lossPerSecond: 0,
+                    totalDeaths: 0,
+                    totalHealed: 0,
+                    imageUrl: new URL('@/assets/parts/buildingTiles_041.png', import.meta.url).href
+                }));
+            } catch (error) {
+                console.error('Erreur lors de la mise à jour des hôpitaux:', error);
+            }
         }
     },
     mounted() {
         // Lancer la mise à jour automatique de l'argent toutes les secondes
         this.moneyInterval = setInterval(this.updateMoney, 1000);
+
+        // Chargement initial
+        this.fetchAndUpdateHospitals();
+
+        // Mise à jour toutes les 5 secondes
+        this.updateInterval = setInterval(() => {
+            this.fetchAndUpdateHospitals();
+        }, 5000);
     },
     beforeUnmount() {
         // Nettoyer l'intervalle quand le composant est détruit
         clearInterval(this.moneyInterval);
+
+        // Nettoyage de l'intervalle
+        if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+        }
     }
 };
 </script>
