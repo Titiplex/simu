@@ -43,7 +43,7 @@ public class HospitalController {
 
     @PostMapping
     public Hospital createHospital(@RequestBody Hospital hospital) {
-        return hospitalService.createHospital(hospital);
+        return hospitalService.createHospital();
     }
 
     @DeleteMapping("/{id}/")

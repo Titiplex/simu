@@ -75,7 +75,7 @@ public class HospitalService {
         return null; // Retourner null si l'hôpital n'est pas trouvé
     }
 
-    public Hospital createHospital(Hospital hospital) {
+    public Hospital createHospital() {
         Hospital hospital = new Hospital();
         hospital.setId(nextId++);
         for(Hospital h : hospitals) {
