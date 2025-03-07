@@ -109,6 +109,7 @@ public class HospitalService {
         return false;
     }
 
+<<<<<<< HEAD
     /**
      * Convertit un Hospital en DTO, en copiant seulement les champs utiles.
      * On exclut 'neighbors' pour éviter la récursion.
@@ -118,5 +119,10 @@ public class HospitalService {
                 .map(u -> new ServiceDTO(u.getName(), u.getMaxCapacity(), u.getCurrentLoad()))
                 .toList();
         return new HospitalDTO(h.getId(), h.getName(), serviceDTOs);
+=======
+
+    public void deleteAllHospitals() {
+        hospitals.clear();
+>>>>>>> e627eb251183d6234cf35d500bff0b6eab0cec71
     }
 }

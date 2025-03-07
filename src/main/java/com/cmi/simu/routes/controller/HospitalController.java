@@ -55,6 +55,12 @@ public class HospitalController {
         return deleted ? "Hôpital supprimé" : "Hôpital non trouvé";
     }
 
+    @DeleteMapping("/hospitals")
+    public void deleteAllHospitals() {
+        hospitalService.deleteAllHospitals(); // Supprime tous les hôpitaux
+            }
+
+
     @PostMapping("/{id}/services")
     public void addMaxCapacity(@PathVariable Long id,
                                @RequestBody Map<String, Object> UnitUpdateData) {
