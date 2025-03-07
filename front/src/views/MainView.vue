@@ -1,8 +1,10 @@
 <template>
     <div class="main-view">
+        <Hospitals />
         <MoneyBar :money="money" />
         <Map :money="money" @add-building="addBuilding" @open="openModal" />
-        <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital: {{ buildings.length == 0 ? "100" : Math.floor(Math.pow(buildings.length, 1.5)*100) }}</button>
+        <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital: {{
+            Math.floor(Math.pow(buildings.length, 2) *100) }}</button>
         <!-- <Building v-for="(building, index) in buildings" :key="index" :building="building" @open="openModal" /> -->
         <Modal v-if="isModalOpen" :building="selectedBuilding" @close="isModalOpen = false" />
     </div>
@@ -13,6 +15,7 @@ import MoneyBar from '@/components/MoneyBar.vue';
 import Map from '@/components/Map.vue';
 import Building from '@/components/Building.vue';
 import Modal from '@/components/Modal.vue';
+import Hospitals from '@/components/Hospitals.vue';
 
 export default {
     name: 'MainView',
@@ -20,11 +23,12 @@ export default {
         MoneyBar,
         Map,
         Building,
-        Modal
+        Modal,
+        Hospitals
     },
     data() {
         return {
-            money: 1000, // Argent initial
+            money: 500, // Argent initial
             buildings: [], // Liste des bâtiments ajoutés
             isModalOpen: false,
             possiblePositions: [
@@ -46,7 +50,7 @@ export default {
             const buildingId = element.dataset.buildingId;
             // Trouver le bâtiment correspondant dans la liste
             const building = this.buildings.find(b => b.id === buildingId);
-            
+
             if (building) {
                 this.selectedBuilding = building;
                 this.isModalOpen = true;
@@ -54,7 +58,7 @@ export default {
         },
 
         addBuilding(building) {
-            const cost = Math.floor(Math.pow(this.buildings.length, 1.5)*100);
+            const cost = Math.floor(Math.pow(this.buildings.length, 2) * 100);
             if (this.money >= cost) {
                 const plot = document.getElementById(`city-${building.row}-${building.col}`);
                 if (plot) {
@@ -62,6 +66,7 @@ export default {
                     plot.dataset.buildingId = building.id; // Stocker l'ID du bâtiment
                     plot.classList.add('hospital');
                     this.buildings.push(building);
+                    console.log(cost);
                     this.money -= cost;
                 }
             } else {
@@ -71,7 +76,7 @@ export default {
 
         findAvailablePosition() {
             return this.possiblePositions.find(pos => {
-                const existingBuilding = this.buildings.find(b => 
+                const existingBuilding = this.buildings.find(b =>
                     b.row === pos.row && b.col === pos.col
                 );
                 return !existingBuilding;
@@ -80,13 +85,13 @@ export default {
 
         //CRÉER LES BUILDINDS AVEC LES SERVICES ASSOCIÉS
         handleAddBuilding() {
-            const cost = Math.floor(Math.pow(this.buildings.length, 1.5)*100);
-            if(this.money < cost) {
+            const cost = Math.floor(Math.pow(this.buildings.length, 2) * 100);
+            if (this.money < cost) {
                 alert("Pas assez d'argent !");
                 return;
             }
             const position = this.findAvailablePosition();
-            
+
             if (!position) {
                 alert("Impossible de construire plus d'hôpitaux - plus de place disponible !");
                 return;
@@ -134,7 +139,7 @@ export default {
                     totalHealed: 0
                 }
 
-                
+
             ];
 
             const buildingId = `Hôpital${this.buildings.length + 1}`;
@@ -142,8 +147,8 @@ export default {
 
             const totalCapacity = services.reduce((sum, s) => sum + s.capacity, 0);
             const totalOccupation = services.reduce((sum, s) => sum + s.occupation, 0);
-            const totalEarningPerSecond = services.reduce((sum, s) => sum + s.earningPerHealed*s.occupation, 0);
-            const totalLossPerSecond = services.reduce((sum, s) => sum + s.lossPerSecond*s.occupation, 0);
+            const totalEarningPerSecond = services.reduce((sum, s) => sum + s.earningPerHealed * s.occupation, 0);
+            const totalLossPerSecond = services.reduce((sum, s) => sum + s.lossPerSecond * s.occupation, 0);
 
             const newBuilding = {
                 id: buildingId,
@@ -156,15 +161,11 @@ export default {
                 totalHealed: 0,
                 row: position.row,
                 col: position.col,
-                rent: totalCapacity*0.1,
+                rent: totalCapacity * 0.1,
                 imageUrl: new URL('@/assets/parts/buildingTiles_041.png', import.meta.url).href,
                 services
             };
 
-            // Ajouter le bâtiment à la liste des bâtiments
-            this.buildings.push(newBuilding);
-            
-            // Appeler la méthode d'ajout avec le nouveau bâtiment
             this.addBuilding(newBuilding);
         },
         updateMoney() {
@@ -172,7 +173,7 @@ export default {
             let totalLosses = 0;
 
             this.buildings.forEach(building => {
-                building.rent = building.capacity*0.1;
+                building.rent = building.capacity * 0.1;
                 totalEarnings += building.earningPerSecond;
                 totalLosses += building.lossPerSecond + building.rent;
             });
@@ -211,9 +212,5 @@ export default {
     border-radius: 5px;
     cursor: pointer;
     z-index: 100;
-}
-
-.add-building-button:hover {
-    background-color: darkgreen;
 }
 </style>
