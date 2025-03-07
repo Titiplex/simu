@@ -1,4 +1,4 @@
-package routes.service;
+package com.cmi.simu.routes.service;
 
 import com.cmi.simu.flow.HospitalUnit;
 import com.cmi.simu.flow.Hospital;

@@ -1,4 +1,4 @@
-package routes.controller;
+package com.cmi.simu.routes.controller;
 
 
 import com.cmi.simu.flow.Hospital;
