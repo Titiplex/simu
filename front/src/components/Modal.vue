@@ -1,20 +1,25 @@
 <template>
     <div class="window">
+        <div class="window-header">
+            <h3>{{ building.id }}</h3>
+            <span class="close-button" v-on:click="close()">&#10005;</span>
+        </div>
         <div class="window-content">
-            <button class="close-button" v-on:click="close()">Fermer</button>
-            <h2>{{ building.type }}</h2>
             <div class="building-info">
-                <p>Capacité totale: {{ building.totalCapacity }}</p>
-                <p>Occupation: {{ building.occupation }}</p>
-                <p>Revenus par seconde: {{ building.earningPerSecond }}$</p>
-                <p>Pertes par seconde: {{ building.lossPerSecond }}$</p>
+                <p><i class="fas fa-hospital"></i> Capacité totale: {{ building.occupation }} / {{ building.capacity }}</p>
+                <p><i class="fas fa-dollar-sign"></i> Revenus par seconde: {{ building.earningPerSecond }}$</p>
+                <p><i class="fas fa-money-bill-wave"></i> Pertes par seconde: {{ building.lossPerSecond }}$</p>
             </div>
             <div class="services-info">
                 <h3>Services</h3>
                 <div v-for="service in building.services" :key="service.id" class="service">
                     <h4>{{ service.name }}</h4>
-                    <p>Capacité: {{ service.capacity }}</p>
-                    <p>Occupation: {{ service.occupation }}</p>
+                    <div class="service-attribut">
+                        <p>Capacité: {{ service.occupation }} / {{ service.capacity }}</p>
+                        <button> {{ Math.pow(service.level, 1.5)*100 }} </button>
+                    </div>
+                    <p></p>
+                    <!-- <p>Occupation: {{ service.occupation }}</p> -->
                 </div>
             </div>
         </div>
@@ -39,6 +44,8 @@ export default {
 </script>
 
 <style scoped>
+@import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css');
+
 .window {
     position: fixed;
     bottom: 0;
@@ -47,40 +54,56 @@ export default {
     height: 400px;
     background-color: white;
     border: 1px solid #ddd;
-    border-radius: 8px 8px 0 0;
+    border-radius: 15px 15px 0 0;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     z-index: 100;
     left: 0;
-    margin-bottom: -50vh;
     transition: ease-in-out 0.7s;
-    /* transform: translateY(-50vh); */
 }
 .window.translate {
     transform: translateY(-50vh);
 }
+
+.window .window-header {
+    background-color: #f1f1f1;
+    padding-left: 15px;
+    padding-right: 15px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .window-content {
     padding: 20px;
-    height: 100%;
+    height: calc(100% - 50px); /* Adjust height to account for header */
     overflow-y: auto;
 }
 
 .close-button {
-    background-color: #ff4444;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 4px;
+    font-size: 20px;
     cursor: pointer;
-    margin-bottom: 10px;
+    color: #ff4444;
 }
 
 .close-button:hover {
-    background-color: #cc0000;
+    color: #cc0000;
 }
 
 .building-info, .services-info {
     margin: 15px 0;
+}
+
+.building-info p {
+    display: flex;
+    align-items: center;
+}
+
+.building-info i {
+    margin-right: 8px;
+    width: 20px;
+    text-align: center;
 }
 
 .service {
@@ -88,5 +111,18 @@ export default {
     padding: 10px;
     margin: 10px 0;
     border-radius: 4px;
+}
+.service-attribut {
+    display: flex;
+    justify-content: space-between;
+}
+.service button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    padding: 0px 10px;
+    cursor: pointer;
 }
 </style>
