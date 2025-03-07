@@ -2,7 +2,7 @@
     <div class="main-view">
         <MoneyBar :money="money" />
         <Map :money="money" @add-building="addBuilding" @open="openModal" />
-        <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital: {{   Math.floor(Math.pow(buildings.length, 2)*100) }}</button>
+        <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital: {{   Math.floor(Math.pow(buildings.length, 4)*100) }}</button>
         <!-- <Building v-for="(building, index) in buildings" :key="index" :building="building" @open="openModal" /> -->
         <Modal v-if="isModalOpen" :building="selectedBuilding" @close="isModalOpen = false" />
     </div>
@@ -55,7 +55,7 @@ export default {
         },
 
         addBuilding(building) {
-            const cost = Math.floor(Math.pow(this.buildings.length, 2)*100);
+            const cost = Math.floor(Math.pow(this.buildings.length, 4)*100);
             if (this.money >= cost) {
                 const plot = document.getElementById(`city-${building.row}-${building.col}`);
                 if (plot) {
@@ -82,7 +82,7 @@ export default {
 
         //CRÉER LES BUILDINDS AVEC LES SERVICES ASSOCIÉS
         handleAddBuilding() {
-            const cost = Math.floor(Math.pow(this.buildings.length, 2)*100);
+            const cost = Math.floor(Math.pow(this.buildings.length, 4)*100);
             if(this.money < cost) {
                 alert("Pas assez d'argent !");
                 return;
@@ -94,7 +94,7 @@ export default {
                 return;
             }
 
-            const services = [
+            let services = [
                 {
                     name: 'Service 1',
                     level: 1,
@@ -144,7 +144,7 @@ export default {
 
             const totalCapacity = services.reduce((sum, s) => sum + s.capacity, 0);
             const totalOccupation = services.reduce((sum, s) => sum + s.occupation, 0);
-            const totalEarningPerSecond = services.reduce((sum, s) => sum + s.earningPerHealed * s.occupation, 0);
+            const totalEarningPerSecond = services.reduce((sum, s) => sum + s.earningPerHealed * s.occupation * s.level, 0);
             const totalLossPerSecond = services.reduce((sum, s) => sum + s.lossPerSecond * s.occupation, 0);
 
             const newBuilding = {
@@ -170,7 +170,24 @@ export default {
             let totalLosses = 0;
 
             this.buildings.forEach(building => {
+                // Recalculer les gains pour chaque bâtiment en fonction de ses services
+                console.log(building.services);
+                building.earningPerSecond = building.services.reduce(
+                    (sum, service) => sum + service.earningPerHealed * service.occupation * service.level,
+                    0
+                );
+                console.log(building.earningPerSecond);
+                
+                // Recalculer les pertes pour chaque bâtiment en fonction de ses services
+                building.lossPerSecond = building.services.reduce(
+                    (sum, service) => sum + service.lossPerSecond * service.occupation,
+                    0
+                );
+
+                // Calculer le loyer basé sur la capacité
                 building.rent = building.capacity * 0.1;
+                
+                // Ajouter aux totaux
                 totalEarnings += building.earningPerSecond;
                 totalLosses += building.lossPerSecond + building.rent;
             });

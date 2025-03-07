@@ -1,6 +1,6 @@
 <template>
     <div class="money-bar">
-        <span>Argent: {{ money }}$</span>
+        <span>Argent: {{ Math.floor(money*100)/100 }}$</span>
     </div>
 </template>
 

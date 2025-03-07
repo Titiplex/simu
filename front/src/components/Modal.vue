@@ -16,9 +16,12 @@
                     <h4>{{ service.name }}</h4>
                     <div class="service-attribut">
                         <p>Capacité: {{ service.occupation }} / {{ service.capacity }}</p>
-                        <button> {{ Math.pow(service.level, 1.5)*100 }} </button>
+                        <button> {{ Math.floor(Math.pow(service.capacity, 2)/2) }} </button>
                     </div>
-                    <p></p>
+                    <div class="service-attribut">
+                        <p>Qualité de service: {{ service.level }}</p>
+                        <button v-on:click="buyServiceLvl(service)"> {{ Math.floor(Math.pow(service.level, 4)*100 )}} </button>
+                    </div>
                     <!-- <p>Occupation: {{ service.occupation }}</p> -->
                 </div>
             </div>
@@ -38,6 +41,16 @@ export default {
     methods: {
         close() {
             this.$emit('close');
+        },
+        buyServiceLvl(service) {
+            const cost = Math.floor(Math.pow(service.level, 4) * 100);
+            if (this.$parent.money >= cost) {
+                service.level += 0.05;
+                service.level = Math.floor(service.level*100)/100;
+                this.$parent.money -= cost;
+            } else {
+                alert("Pas assez d'argent !");
+            }
         }
     }
 };
