@@ -16,7 +16,7 @@ export default {
 
     async addBuilding(building) {
         try {
-            const response = await axios.post(`${API_URL}/hospitals/${building}`);
+            const response = await axios.post(`${API_URL}/hospitals/${building.id}`);
             return response.data;
         } catch (error) {
             console.error('Erreur lors de l’ajout du bâtiment:', error);
