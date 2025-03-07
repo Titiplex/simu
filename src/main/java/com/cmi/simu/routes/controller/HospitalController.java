@@ -1,8 +1,11 @@
 package com.cmi.simu.routes.controller;
 
 
+import com.cmi.simu.flow.ArrivalScenario;
 import com.cmi.simu.flow.Clock;
 import com.cmi.simu.flow.Hospital;
+import com.cmi.simu.routes.records.HospitalDTO;
+import com.cmi.simu.routes.records.ServiceDTO;
 import com.cmi.simu.routes.service.HospitalService;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,7 +30,7 @@ public class HospitalController {
     }
 
     @GetMapping("/hospitals")
-    public static List<Map<String, Object>> getAllHospitals() {
+    public static List<HospitalDTO> getAllHospitals() {
 
         Clock.addOneHour();
         return hospitalService.getHospitalsWithServices();
@@ -36,14 +39,14 @@ public class HospitalController {
 
     // Route pour récupérer les services d'un hôpital spécifique avec capacité
     @GetMapping("/{id}/services")
-    public List<Map<String, Object>> getHospitalServices(@PathVariable Long id) {
+    public List<ServiceDTO> getHospitalServices(@PathVariable Long id) {
         return hospitalService.getHospitalServices(id);
     }
 
 
     @PostMapping
     public Hospital createHospital(@RequestBody Hospital hospital) {
-        return hospitalService.createHospital();
+        return hospitalService.createHospital(hospital);
     }
 
     @DeleteMapping("/{id}/")
@@ -51,6 +54,12 @@ public class HospitalController {
         boolean deleted = hospitalService.deleteHospital(id);
         return deleted ? "Hôpital supprimé" : "Hôpital non trouvé";
     }
+
+    @DeleteMapping("/hospitals")
+    public void deleteAllHospitals() {
+        hospitalService.deleteAllHospitals(); // Supprime tous les hôpitaux
+            }
+
 
     @PostMapping("/{id}/services")
     public void addMaxCapacity(@PathVariable Long id,
