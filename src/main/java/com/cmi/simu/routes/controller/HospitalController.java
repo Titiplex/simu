@@ -11,7 +11,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/hospitals") // URL de base
-@CrossOrigin(origins = "http://localhost:5173") // Autorise Vue.js en dev
+@CrossOrigin(origins = "http://localhost:3000") // Autorise Vue.js en dev
 
 public class HospitalController {
 
@@ -38,8 +38,8 @@ public class HospitalController {
 
 
     @PostMapping
-    public Hospital createHospital(@RequestBody Hospital hospital) {
-        return hospitalService.createHospital(hospital);
+    public Hospital createHospital() {
+        return hospitalService.createHospital();
     }
 
     @DeleteMapping("/{id}/")
