@@ -26,20 +26,38 @@ export default {
   name: 'Map',
   data() {
     return {
-      cityLayer: Array.from({ length: 10 * 10 }, (_, i) => ({
-        row: Math.floor(i / 10),
-        col: i % 10,
-        src: new URL('@/assets/parts/cityTiles_010.png', import.meta.url).href
-      }))
+      cityLayer: Array.from({ length: 30 * 30 }, (_, i) => {
+        const row = Math.floor(i / 30);
+        const col = i % 30;
+        let fileName;
+
+        if (row % 3 === 0 && col % 3 === 0) {
+          fileName = 'landscapeTiles_090.png';
+        } else if (row % 3 === 0) {
+          fileName = 'landscapeTiles_074.png';
+        } else if (col % 3 === 0) {
+          fileName = 'landscapeTiles_082.png';
+        } else {
+          fileName = 'landscapeTiles_067.png';
+        }
+
+        const src = `/src/assets/parts/${fileName}`;
+        return {
+          row,
+          col,
+          src
+        };
+      }),
+      buildingLayer: []
     };
   },
   methods: {
     getIsoPosition(row, col) {
-      const tileWidth = 99; 
+      const tileWidth = 99;
       const tileHeight = 49.5;
-      const offsetX = 300; 
-      const offsetY = 100; 
-      const spacing = 1.3; 
+      const offsetX = 750;
+      const offsetY = -500;
+      const spacing = 1.3;
       const x = offsetX + (col - row) * (tileWidth / 2) * spacing;
       const y = offsetY + (col + row) * (tileHeight / 2) * spacing;
       return {
@@ -61,8 +79,8 @@ export default {
 
 .map-container {
   position: relative;
-  width: 800px;
-  height: 600px;
+  width: 100%;
+  height: 100%;
   background: #ccc;
   overflow: hidden;
 }
