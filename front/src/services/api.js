@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'http://10.126.2.137:8080/api';
 
 export default {
     async getBuildings(id) {
@@ -38,6 +38,7 @@ export default {
     async fetchHospitals() {
         try {
             const response = await axios.get(`${API_URL}/hospitals`);
+            console.log("ok");
             return response.data;
         } catch (error) {
             console.error('Erreur lors de la récupération des hôpitaux:', error);
