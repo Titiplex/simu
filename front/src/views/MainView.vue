@@ -1,5 +1,6 @@
 <template>
     <div class="main-view">
+        <!-- <Hospitals /> -->
         <MoneyBar :money="money" />
         <Map :money="money" @add-building="addBuilding" @open="openModal" />
         <button @click="handleAddBuilding" class="add-building-button">Ajouter un hôpital: {{ buildings.length == 0 ?
@@ -7,7 +8,6 @@
         <!-- <Building v-for="(building, index) in buildings" :key="index" :building="building" @open="openModal" /> -->
         <Modal v-if="isModalOpen" :building="selectedBuilding" @close="isModalOpen = false" />
     </div>
-
 </template>
 
 <script>
@@ -15,6 +15,7 @@ import MoneyBar from '@/components/MoneyBar.vue';
 import Map from '@/components/Map.vue';
 import Building from '@/components/Building.vue';
 import Modal from '@/components/Modal.vue';
+import Hospitals from '@/components/Hospitals.vue';
 
 export default {
     name: 'MainView',
@@ -23,6 +24,7 @@ export default {
         Map,
         Building,
         Modal,
+        Hospitals
     },
     data() {
         return {
