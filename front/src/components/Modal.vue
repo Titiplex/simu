@@ -16,7 +16,7 @@
                     <h4>{{ service.name }}</h4>
                     <div class="service-attribut">
                         <p>Capacité: {{ service.occupation }} / {{ service.capacity }}</p>
-                        <button> {{ Math.floor(Math.pow(service.capacity, 2)/2) }} </button>
+                        <button v-on:click="buyCapLvl(service)" > {{ Math.floor(Math.pow(service.capacity, 2)/2) }} </button>
                     </div>
                     <div class="service-attribut">
                         <p>Qualité de service: {{ service.level }}</p>
@@ -47,6 +47,15 @@ export default {
             if (this.$parent.money >= cost) {
                 service.level += 0.05;
                 service.level = Math.floor(service.level*100)/100;
+                this.$parent.money -= cost;
+            } else {
+                alert("Pas assez d'argent !");
+            }
+        },
+        buyCapLvl (service) {
+            const cost = Math.floor(Math.pow(service.capacity, 2)/2);
+            if (this.$parent.money >= cost) {
+                service.capacity += 1;
                 this.$parent.money -= cost;
             } else {
                 alert("Pas assez d'argent !");
