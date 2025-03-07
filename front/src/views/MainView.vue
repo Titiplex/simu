@@ -59,7 +59,7 @@ export default {
                     level: 1,
                     capacity: 50,
                     occupation: 0,
-                    earningPerSecond: 5,
+                    earningPerHealed: 5,
                     lossPerSecond: 0,
                     totalDeaths: 0,
                     totalHealed: 0
@@ -69,7 +69,7 @@ export default {
                     level: 1,
                     capacity: 30,
                     occupation: 0,
-                    earningPerSecond: 3,
+                    earningPerHealed: 5,
                     lossPerSecond: 1,
                     totalDeaths: 0,
                     totalHealed: 0
@@ -79,7 +79,7 @@ export default {
                     level: 1,
                     capacity: 30,
                     occupation: 0,
-                    earningPerSecond: 3,
+                    earningPerHealed: 5,
                     lossPerSecond: 1,
                     totalDeaths: 0,
                     totalHealed: 0
@@ -89,7 +89,7 @@ export default {
                     level: 1,
                     capacity: 30,
                     occupation: 0,
-                    earningPerSecond: 3,
+                    earningPerHealed: 5,
                     lossPerSecond: 1,
                     totalDeaths: 0,
                     totalHealed: 0
@@ -99,7 +99,7 @@ export default {
                     level: 1,
                     capacity: 30,
                     occupation: 0,
-                    earningPerSecond: 3,
+                    earningPerHealed: 5,
                     lossPerSecond: 1,
                     totalDeaths: 0,
                     totalHealed: 0
