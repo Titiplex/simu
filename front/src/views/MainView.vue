@@ -51,7 +51,7 @@ export default {
             // Récupérer l'ID du bâtiment depuis l'élément
             const buildingId = element.dataset.buildingId;
             // Trouver le bâtiment correspondant dans la liste
-            const building = this.buildings.find(b => b.id === buildingId);
+            const building = this.buildings.find(b => b.id == buildingId);
 
             if (building) {
                 this.selectedBuilding = building;
@@ -69,22 +69,6 @@ export default {
             }
         },
 
-        addBuilding(building) {
-            const cost = Math.floor(Math.pow(this.buildings.length, 2) * 100);
-            if (this.money >= cost) {
-                const plot = document.getElementById(`city-${building.row}-${building.col}`);
-                if (plot) {
-                    plot.src = building.imageUrl;
-                    plot.dataset.buildingId = building.id; // Stocker l'ID du bâtiment
-                    plot.classList.add('hospital');
-                    this.buildings.push(building);
-                    console.log(cost);
-                    this.money -= cost;
-                }
-            } else {
-                alert("Pas assez d'argent !");
-            }
-        },
 
         async addBuilding(building) {
             const cost = Math.floor(Math.pow(this.buildings.length, 2) * 100);
@@ -180,7 +164,7 @@ export default {
 
             ];
 
-            const buildingId = `Hôpital${this.buildings.length + 1}`;
+            const buildingId = this.buildings.length + 1;
             services.forEach(service => service.buildingId = buildingId);
 
             const totalCapacity = services.reduce((sum, s) => sum + s.capacity, 0);

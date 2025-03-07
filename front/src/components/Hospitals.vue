@@ -7,9 +7,14 @@ let intervalId = null;
 
 // Fonction pour récupérer les hôpitaux
 const fetchHospitals = async () => {
-    const data = await api.fetchHospitals();
-    hospitals.value = data; // Met à jour les hôpitaux avec les nouvelles données
+    try {
+        const data = await api.fetchHospitals();
+        hospitals.value = data; // Met à jour les hôpitaux avec les nouvelles données
+    } catch (error) {
+        console.error("Erreur lors de la récupération des hôpitaux :", error.response || error.message);
+    }
 };
+
 
 // Démarrer la récupération automatique
 onMounted(() => {
