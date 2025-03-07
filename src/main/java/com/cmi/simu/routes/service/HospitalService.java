@@ -5,31 +5,33 @@ import com.cmi.simu.flow.Hospital;
 import com.cmi.simu.flow.ArrivalScenario;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class HospitalService {
-    private final List<Hospital> hospitals = new ArrayList<>();
-    private Long nextId = 1L;
+    private static final List<Hospital> hospitals = new ArrayList<>();
+    private int nextId = 1;
 
     public HospitalService() {
     }
 
-    public List<Hospital> getAllHospitals() {
+    public static List<Hospital> getAllHospitals() {
         return hospitals;}
 
     public List<Map<String, Object>> getHospitalsWithServices() {
             for(Hospital h : hospitals) {
-                h.simulateOneTick(new ArrivalScenario(hospitals))
+                h.simulateOneTick(new ArrivalScenario(hospitals));
             }
-                return hospitalService.getAllHospitals().stream()
+                return HospitalService.getAllHospitals().stream()
                     .map(hospital -> Map.of(
                             "id", hospital.getId(),
                             "name", hospital.getName(),
-                            "services", hospital.getServices().stream()
+                            "services", hospital.getUnits().stream()
                                     .map(this::convertObjectToMap)  // 🔥 Conversion automatique !
                                     .collect(Collectors.toList())
                     ))
@@ -44,7 +46,7 @@ public class HospitalService {
                 map.put(field.getName(), field.get(obj));
             }
         } catch (IllegalAccessException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         return map;
     }
@@ -56,14 +58,14 @@ public class HospitalService {
     public List<Map<String, Object>> getHospitalServices(Long id) {
         // Recherche de l'hôpital par ID
         Hospital hospital = hospitals.stream()
-                .filter(h -> h.getId().equals(id))
+                .filter(h -> h.getId() == id)
                 .findFirst()
                 .orElse(null);
 
         // Si l'hôpital existe, transformer les services en Map avec capacité
         if (hospital != null) {
             return hospital.getUnits().stream()
-                    .map(unit -> Map.of(
+                    .map(unit -> Map.<String, Object>of(
                             "name", unit.getName(),
                             "maxCapacity", unit.getMaxCapacity(),
                             "occupiedCapacity", unit.getCurrentLoad()
@@ -84,26 +86,27 @@ public class HospitalService {
     }
 
     public boolean deleteHospital(Long id) {
-        return hospitals.removeIf(h -> h.getId().equals(id));
+        return hospitals.removeIf(h -> h.getId() == id);
     }
 
-    public void updateMaxCapacityUnit(long id, String unitName, double newMaxCapacity) {
+    public boolean updateMaxCapacityUnit(long id, String unitName, double newMaxCapacity) {
         Hospital hospital = hospitals.stream()
-                .filter(h -> h.getId().equals(id))
+                .filter(h -> h.getId() == id)
                 .findFirst()
                 .orElse(null);
         if (hospital != null) {
             // Recherche du unit par nom dans l'hôpital
-            HospitalUnit hospitalUnit = hospital.getunits().stream()
-                    .filter(s -> s.getName().equalsIgnoreCase(serviceName))
+            HospitalUnit hospitalUnit = hospital.getUnits().stream()
+                    .filter(s -> s.getName().equalsIgnoreCase(unitName))
                     .findFirst()
                     .orElse(null);
 
             if (hospitalUnit != null) {
                 // Mise à jour de la capacité maximale du unit
-                hospitalUnit.setMaxCapacity(newMaxCapacity);
+                hospitalUnit.setMaxCapacity((int) newMaxCapacity);
                 return true; // La mise à jour a réussi
             }
         }
+        return false;
     }
 }

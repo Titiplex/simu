@@ -1,6 +1,7 @@
 package com.cmi.simu.flow;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -18,8 +19,8 @@ import java.util.Map;
 @Getter
 public class Hospital {
 
-    @Getter
-    private final int id;               // Identifiant unique (ex. pour requête POST)
+    @Getter @Setter
+    private int id;               // Identifiant unique (ex. pour requête POST)
     private final String name;           // Nom de l'hôpital
 
     private final List<HospitalUnit> units;   // Services internes
