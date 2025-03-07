@@ -115,13 +115,13 @@ export default {
             // Calculer les valeurs totales à partir des services
             const totalCapacity = services.reduce((sum, s) => sum + s.capacity, 0);
             const totalOccupation = services.reduce((sum, s) => sum + s.occupation, 0);
-            const totalEarningPerSecond = services.reduce((sum, s) => sum + s.earningPerSecond, 0);
+            const totalEarningPerSecond = services.reduce((sum, s) => sum + s.earningPerHealed, 0);
             const totalLossPerSecond = services.reduce((sum, s) => sum + s.lossPerSecond, 0);
 
             const newBuilding = {
                 id: buildingId,
                 level: 1,
-                Capacity: totalCapacity,
+                capacity: totalCapacity,
                 occupation: totalOccupation,
                 earningPerSecond: totalEarningPerSecond,
                 lossPerSecond: totalLossPerSecond,
