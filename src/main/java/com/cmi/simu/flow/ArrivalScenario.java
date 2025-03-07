@@ -94,17 +94,30 @@ public class ArrivalScenario {
 
                 } else {
                     // Situation normale : flux plus modéré
-                    if (unit.getName().equalsIgnoreCase("Urgences")) {
-                        urgentArr  = getRandomInRange(0, 2);
-                        normalArr  = getRandomInRange(2, 4);
-                        lowArr     = getRandomInRange(1, 3);
-                    }
+                    if (isNight()) {
+                        if (unit.getName().equalsIgnoreCase("Urgences")) {
+                            urgentArr = getRandomInRange(0, 2);
+                            normalArr = getRandomInRange(1, 3);
+                            lowArr    = getRandomInRange(0, 2);
+                        }
+//                        else {
+//                            urgent = randomInRange(0, 1);
+//                            normal = randomInRange(0, 2);
+//                            low    = randomInRange(0, 1);
+//                        }
+                    } else {
+                        if (unit.getName().equalsIgnoreCase("Urgences")) {
+                            urgentArr  = getRandomInRange(0, 2);
+                            normalArr  = getRandomInRange(2, 4);
+                            lowArr     = getRandomInRange(1, 3);
+                        }
 //                    else {
 //                        // services classiques
 //                        urgentArr  = getRandomInRange(0, 1);
 //                        normalArr  = getRandomInRange(1, 4);
 //                        lowArr     = getRandomInRange(0, 2);
 //                    }
+                    }
                 }
 
                 // On affecte ces arrivées au service
@@ -125,5 +138,9 @@ public class ArrivalScenario {
             return min;
         }
         return rand.nextInt(max - min + 1) + min;
+    }
+
+    private boolean isNight() {
+        return Clock.getTime() < 6 || Clock.getTime() > 22;
     }
 }

@@ -26,6 +26,8 @@ public class MainFlow {
             logHospitalState(hospitalGraph);
 
             System.out.println("*************************************************");
+
+            Clock.addOneHour();
         }
 
         System.out.println("Simulation terminee !");

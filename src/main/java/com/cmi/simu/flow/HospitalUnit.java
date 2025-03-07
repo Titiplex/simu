@@ -3,10 +3,7 @@ package com.cmi.simu.flow;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * Représente une unité hospitalière modélisée comme une "cellule"
@@ -341,7 +338,10 @@ public class HospitalUnit {
      * On peut décider de prioriser l'URGENT, puis NORMAL, ensuite LOW.
      */
     public int treatPatientsOneStep() {
-        if (patients.isEmpty() || staffCapacity <= 0) return 0;
+
+        int totalStaffCapacity = staffCapacity + suppStaffForHour();
+
+        if (patients.isEmpty() || totalStaffCapacity <= 0) return 0;
 
         // 1) Tri par priorité (URGENT d'abord, puis NORMAL, ensuite LOW)
         //    → On veut soigner en priorité les urgences
@@ -351,7 +351,7 @@ public class HospitalUnit {
         //          donc on priorise URGENT d'abord.
 
         // 2) On traite (décrémente timeToTreat) jusqu'à staffCapacity patients
-        int treatable = Math.min(staffCapacity, sorted.size());
+        int treatable = Math.min(totalStaffCapacity, sorted.size());
         int effectivelyTreatedOrRemoved = 0;
 
         for (int i = 0; i < treatable; i++) {
@@ -373,11 +373,42 @@ public class HospitalUnit {
 
         // 3) Retirer du service ceux dont timeToTreat ← 0 (ils sortent du système)
         //    Il faut le faire depuis la liste 'patients' d'origine
-        patients.removeIf(p -> p.getTimeToTreat() <= 0);
+        // patients.removeIf(p -> p.getTimeToTreat() <= 0);
+
+        // vérifier si éligible à la sortie
+        Iterator<Patient> it = patients.iterator();
+        while (it.hasNext()) {
+            Patient p = it.next();
+            // Condition de sortie : timeToTreat <= 0 ET a passé minStayInUnit
+            if (p.getTimeToTreat() <= 0 && p.getTimeSpentInService() >= p.getMinStayInUnit()) {
+                it.remove();
+                effectivelyTreatedOrRemoved++;
+            }
+        }
 
         // 4) MAJ currentLoad
         currentLoad = patients.size();
 
         return effectivelyTreatedOrRemoved;
+    }
+
+    private int suppStaffForHour() {
+        int hour = Clock.getTime();
+
+        if (hour < 6) return getRandomInRange(1, 2);
+        else if (hour < 12) return getRandomInRange(1, 3);
+        else if (hour < 21) return getRandomInRange(2, 6);
+        return getRandomInRange(2, 4);
+    }
+
+    /**
+     * Retourne un entier aléatoire compris entre min et max inclus
+     */
+    private int getRandomInRange(int min, int max) {
+        Random rand = new Random();
+        if (min > max) {
+            return min;
+        }
+        return rand.nextInt(max - min + 1) + min;
     }
 }
