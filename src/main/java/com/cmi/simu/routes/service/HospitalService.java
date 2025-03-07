@@ -110,4 +110,9 @@ public class HospitalService {
         }
         return false;
     }
+
+
+    public void deleteAllHospitals() {
+        hospitals.clear();
+    }
 }
